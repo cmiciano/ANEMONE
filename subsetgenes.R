@@ -1,4 +1,6 @@
 #!/usr/bin/env Rscript
+
+#### Takes a list of input genes and subsets allTFcounts.txt by genes of interest
 suppressMessages(library(gplots))
 
 args<-commandArgs(trailingOnly=T)
@@ -10,6 +12,25 @@ inputgenes <-read.delim(infile_name, stringsAsFactors = F, header = F)
 inputvec <- readLines("inputgenes.txt")
 #inputvec <- as.vector(inputgenes)
 allTFcounts <- read.delim("~/allTFcounts.txt", stringsAsFactors=FALSE)
+
+
+### Subset expression matrix for 
+repmotifs <- read.delim("~/163repmotifssummary.txt", stringsAsFactors=FALSE)
+
+
+
+View(colnames(allTFcounts))
+colallTF <- colnames(allTFcounts)
+View(repmotifs$short_rep_motif)
+shortTF <- repmotifs$short_rep_motif
+
+allTFsub <- subset(allTFcounts, colallTF %in% shortTF)
+allTFsub <- allTFcounts[,colallTF %in% shortTF]
+ID <- allTFcounts$ID
+allTFsub <- cbind(ID, allTFsub)
+
+
+### Subset allTFcounts.txt into the representative TFs
 
 #genelist <- c("A1CF", "AACS", "AADACL4", "AADAT")
 

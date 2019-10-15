@@ -45,7 +45,7 @@ fullnm <- gsub(".txt", "",fullnm)
 fullnm <- gsub("anno", "",fullnm)
 
 #RAR:RXR(NR),DR5|ES-RAR-ChIP-Seq(GSE56893)-12
-#cat("nm to write", fullnm)
+cat("nm to write", fullnm, "\n")
 #names(sub)[1] <- "Motif"
 #namemotif <- sub$Motif
 #tfmotif <- sapply(strsplit(namemotif,"[/]"), `[`, 1)

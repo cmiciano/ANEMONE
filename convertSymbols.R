@@ -3,12 +3,14 @@
 #### Takes in a gene list as a text file, a genome (either mm10 or hg19),
 ## and ID type (geneID, Unigene, RefSeq, Ensembl, name) and converts
 ## them to gene symbol
-args<-commandArgs(trailingOnly=T)
+#args<-commandArgs(trailingOnly=T)
 
-infile_name = args[1]
-cat("Reading in gene list:", infile_name, "\n")
+#infile_name = args[1]
+#cat("Reading in gene list:", infile_name, "\n")
+
+convertGenes <- function(infile_name, genome_type, idtype) {
 inputgenesdata <- read.delim(infile_name, header = F, stringsAsFactors = F)
-inputgenesdata <-read.delim("inputgenes.txt", stringsAsFactors = F, header = F)
+#inputgenesdata <-read.delim("inputgenes.txt", stringsAsFactors = F, header = F)
 
 ## Example file 
 #GeneID
@@ -30,23 +32,21 @@ inputgenesdata <-read.delim("inputgenes.txt", stringsAsFactors = F, header = F)
 
 names(inputgenesdata) <- "gene_symbol"
 
-ref = args[2]
-if (ref == "mm10") {
+if (genome_type == "mm10") {
   cat("Using mm10 genome\n")
-  generef <- read.delim("~/mm10_GeneIDsymbol.tsv", 
+  generef <- read.delim("mm10_GeneIDsymbol.tsv", 
                         header=TRUE, stringsAsFactors = F)
   
-} else if(ref == "hg19") {
+} else if(genome_type == "hg19") {
   cat("Using hg19 genome\n")
-  generef <- read.delim("~/hg19_GeneIDsymbol.tsv", 
+  generef <- read.delim("hg19_GeneIDsymbol.tsv", 
                         header=TRUE, stringsAsFactors = F)
-  
+
 } else {
   print("Not a valid genome")
 }
 
 
-idtype = args[3]
 
 
 if(idtype == "geneid") {
@@ -71,8 +71,14 @@ if(idtype == "geneid") {
   }
 
 #Converts all forms to ENS
-inputgenesdata <- as.character(sub$name)
-inputgenesdata <- data.frame(inputgenesdata)
-names(inputgenesdata) <- "name"
-write.table(inputgenesdata, "outputgenes.txt", row.names = F, col.names = F, quote = F)
+outgenes <- as.character(sub$Ensembl)
+outgenes <- data.frame(outgenes)
+names(outgenes) <- "ensembl"
+#write.table(inputgenesdata, "outputgenes.txt", row.names = F, col.names = F, quote = F)
 #cat(nrows(inputgenesdata))
+return(outgenes)
+
+}
+
+#outfile <- convertGenes("inputgenes.txt", "hg19", "name")
+

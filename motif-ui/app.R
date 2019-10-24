@@ -1,8 +1,11 @@
 #
 # This is a Shiny web application. You can run the application by clicking
 # the 'Run App' button above.
-
+source('convertSymbols.R')
 library(shiny)
+
+#source("census-app/helpers.R")
+#counties <- readRDS("census-app/data/counties.rds")
 
 # Define UI for data upload app ----
 ui <- fluidPage(
@@ -16,15 +19,6 @@ ui <- fluidPage(
     # Sidebar panel for inputs ----
     sidebarPanel(
       
-      # Input: Select a file ----
-      fileInput("file1", "Upload a list of genes",
-                multiple = FALSE,
-                accept = c("text/csv",
-                           "text/comma-separated-values,text/plain",
-                           ".csv")),
-      
-      # Horizontal line ----
-      tags$hr(),
       
       # Input: Checkbox if file has header ----
       #checkboxInput("header", "Header", TRUE),
@@ -54,7 +48,19 @@ ui <- fluidPage(
                    selected = "head"),
       
       selectInput("genome", "Select Genome:",
-                  c("Human","Mouse"))
+                  c("hg19","mm10")),
+      
+      selectInput("idtype", "Select Gene ID type:",
+                  c("geneid","unigene","refseq","ensembl","name")),
+      # Horizontal line ----
+      tags$hr(),
+      # Input: Select a file ----
+      fileInput("file1", "Upload a list of genes",
+                multiple = FALSE,
+                accept = c("text/csv",
+                           "text/comma-separated-values,text/plain",
+                           ".csv"))
+      
       
     ),
     
@@ -64,6 +70,7 @@ ui <- fluidPage(
       # Output: Data file ----
       textOutput("geneout"),
       tableOutput("contents"),
+      tableOutput("changed"),
       
       tabsetPanel(type = "tabs",
                   tabPanel("PCA", plotOutput("plot")),
@@ -86,6 +93,8 @@ server <- function(input, output) {
     
     req(input$file1)
     
+ 
+    
     df <- read.delim(input$file1$datapath,
                    #header = input$header,
                    sep = input$sep,
@@ -104,7 +113,13 @@ server <- function(input, output) {
 
     
   })
-  
+  output$changed <- renderTable({
+    if(is.null(input$file1))  
+      return(NULL) 
+    
+    newgenes <- convertGenes(input$file1$datapath, input$genome, input$idtype)
+    return(newgenes)
+  })
   output$geneout <- renderText({
     paste("You chose", input$genome)
   })

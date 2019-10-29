@@ -2,7 +2,9 @@
 # This is a Shiny web application. You can run the application by clicking
 # the 'Run App' button above.
 source('convertSymbols.R')
+source('subsetGenes.R')
 library(shiny)
+library(ggplot2)
 
 #source("census-app/helpers.R")
 #counties <- readRDS("census-app/data/counties.rds")
@@ -69,10 +71,11 @@ ui <- fluidPage(
       
       # Output: Data file ----
       textOutput("geneout"),
-      tableOutput("contents"),
-      tableOutput("changed"),
+      #tableOutput("contents"),
+     
       
       tabsetPanel(type = "tabs",
+                  tabPanel("Input Genes", tableOutput("contents"), tableOutput("changed")),
                   tabPanel("PCA", plotOutput("plot")),
                   tabPanel("Heatmap", verbatimTextOutput("summary")),
                   tabPanel("Network Graph", tableOutput("table"))
@@ -113,15 +116,47 @@ server <- function(input, output) {
 
     
   })
+
   output$changed <- renderTable({
     if(is.null(input$file1))  
       return(NULL) 
     
-    newgenes <- convertGenes(input$file1$datapath, input$genome, input$idtype)
-    return(newgenes)
+    newgenes <<- reactive(convertGenes(input$file1$datapath, input$genome, input$idtype))
+    return(head(newgenes()))
   })
+  
   output$geneout <- renderText({
     paste("You chose", input$genome)
+  })
+  
+  output$plot <- renderPlot({
+    if(is.null(input$file1))  
+      return(NULL) 
+    #newgenes <- convertGenes(input$file1$datapath, input$genome, input$idtype)
+   # pcaDF <- generatePCA(input$file1$datapath)
+    pcaDF <- generatePCA(newgenes(),input$genome)
+    
+    #ggplot(pcaDF)
+    groupnum <- rownames(pcaDF)
+    ## new plot with 150
+    xmax <- round(max(pcaDF$PC1))+1
+    xmin <- round(min(pcaDF$PC1))-1
+    
+    ymax <- round(max(pcaDF$PC2))+1
+    ymin <- round(min(pcaDF$PC2))-1
+    ggplot(pcaDF,aes(PC1 ,PC2)) +
+       ggtitle("Genes Grouped by Common Motifs") +
+       xlab(paste("PC1",round(pc1var * 100, 0), "%"))+
+       ylab(paste("PC2",round(pc2var * 100, 0), "%")) +
+       xlim(xmin, xmax) + 
+       ylim(ymin,ymax) +
+       #geom_text(label= groupnum, size = 3, nudge_x = 1 ,nudge_y = 2) +
+       #scale_fill_discrete(name = "Grouping") + 
+       geom_point(size = 3) +
+       #geom_step() +
+       #scale_color_manual(values = c("#7FC97F","#F0027F","#386CB0"))
+       theme_classic() 
+    # dev.off()
   })
   
 }

@@ -76,11 +76,11 @@ if(idtype == "geneid") {
 
 #Converts all forms to ENS
 cat("Converting input genes to in Ensembl ID...\n")
-outgenes <- as.character(sub$Ensembl)
+outgenes <- as.character(sub$name)
 outgenes <- outgenes[!outgenes == ""] #Remove blank genes
 outgenes <- data.frame(outgenes)
-names(outgenes) <- "ensembl"
-#write.table(inputgenesdata, "outputgenes.txt", row.names = F, col.names = F, quote = F)
+names(outgenes) <- "name"
+write.table(outgenes, "outputgenes.txt", row.names = F, col.names = F, quote = F)
 #cat(nrows(inputgenesdata))
 
 return(outgenes)
@@ -90,5 +90,5 @@ return(outgenes)
 
 
 ####3
-#outfile <- convertGenes("motif-genes-app/inputgenes.txt", "hg19", "name")
+outfile <- convertGenes("../inputgenes.txt", "hg19", "name")
 

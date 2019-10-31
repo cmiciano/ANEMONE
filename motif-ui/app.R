@@ -18,7 +18,7 @@ library(shinyHeatmaply)
 ui <- fluidPage(
   
   # App title ----
-  titlePanel("Uploading Files"),
+  titlePanel("Motif/Gene Clustering Tool"),
   
   # Sidebar layout with input and output definitions ----
   sidebarLayout(
@@ -80,11 +80,17 @@ ui <- fluidPage(
      
       
       tabsetPanel(type = "tabs",
+                  tabPanel("Get Started", 
+                           h2("Welcome to the tool, put your genes of interest in a text file"),
+                           h3("1. Select the genome of interest, hg19 or mm10"),
+                           h3("2. Select the current Gene ID type of your data. We will convert it."),
+                           h3("3. Upload your file of gene symbols"),
+                           h3("4. Navigate to the other tabs to see visualizations of your data")),
                   tabPanel("Input Genes", tableOutput("contents"), tableOutput("changed")),
                   tabPanel("PCA", plotOutput("plot"),
                             downloadButton("save", "Download")),
                   #tabPanel("Heatmap", tableOutput("heatmap")),
-                  tabPanel("Heatmap", plotOutput("heatmap"),
+                  tabPanel("Heatmap", plotlyOutput("heatmap", width = "800px", height = "800px" ),
                            downloadButton("downloadData", "Download")),
                   tabPanel("Network Graph", tableOutput("table"))
       )
@@ -96,6 +102,7 @@ ui <- fluidPage(
 # Define server logic to read selected file ----
 server <- function(input, output) {
   
+
   output$contents <- renderTable({
     
     # input$file1 will be NULL initially. After the user selects
@@ -177,9 +184,9 @@ server <- function(input, output) {
       ylab(paste("PC2",round(pc2var * 100, 0), "%")) +
       xlim(xmin, xmax) + 
       ylim(ymin,ymax) +
-      geom_text(label= groupnum, size = 3, nudge_x = 1 ,nudge_y = 2) +
+      #geom_text(label= groupnum, size = 3, nudge_x = 1 ,nudge_y = 2) +
       #scale_fill_discrete(name = "Grouping") + 
-      #geom_point(size = 3) +
+      geom_point(size = 3) +
       #geom_step() +
       #scale_color_manual(values = c("#7FC97F","#F0027F","#386CB0"))
       theme_classic() 
@@ -207,21 +214,37 @@ server <- function(input, output) {
   #   return(map)
   # })
 
-  output$heatmap <- renderPlot({
+  output$heatmap <- renderPlotly({
      if(is.null(input$file1))
        return(NULL)
+    
+     progressHeat <- shiny::Progress$new()
+     on.exit(progressHeat$close())
+     progressHeat$set(message = "Making heatmap matrix", value = 0)
+    
      mapmat <<- genHeatmap(newgenes(),input$genome) #should return table
-  
-     heatmap.2(as.matrix(mapmat), Rowv = T, Colv = T, col = heat.colors,
-               trace = "none", labRow = rownames(targetmatnmum),
-               #lhei = c(0.5,5),
-               #lhei = c(0.5,1),
-               #lwid = c(0.5,0.5),
-               cexRow=0.15,
-               cexCol=0.15,
-               hclustfun=function(x) hclust(x, method="ward.D"))
-              # invisible(dev.off())
-               cat("Heatmap finished!\n")
+     data("mtcars")
+     progressHeat$set(message = "Plotting heatmap", value = 0.50)
+     cat("nrows mapmat:", nrow(mapmat))
+     #mapmat
+     #submat <- mapmat[1:5,1:5]
+     #heatmaply(submat)
+     #heatmaply(submat, labRow = NA, labCol = NA)
+     heatmaply(mapmat, cexRow = 0.5, cexCol = 0.3)
+     #heatmaply(mtcars)
+     
+     #heatmaply(mtcars, xlab = "Features", ylab = "Cars") 
+               ##WORKS
+     # heatmap.2(as.matrix(mapmat), Rowv = T, Colv = T, col = heat.colors,
+     #           trace = "none", labRow = rownames(targetmatnmum),
+     #           #lhei = c(0.5,5),
+     #           #lhei = c(0.5,1),
+     #           #lwid = c(0.5,0.5),
+     #           cexRow=0.15,
+     #           cexCol=0.15,
+     #           hclustfun=function(x) hclust(x, method="ward.D"))
+     #          # invisible(dev.off())
+     #           cat("Heatmap finished!\n")
   
    })
 
@@ -231,15 +254,15 @@ server <- function(input, output) {
       print("in ind heat")
       return(NULL) 
     mapmat <<- genHeatmap(newgenes(),input$genome) #should return table
-    
-    heatmap.2(as.matrix(mapmat), Rowv = T, Colv = T, col = heat.colors, 
-              trace = "none", labRow = rownames(targetmatnmum),
-              #lhei = c(0.5,5),     
-              #lhei = c(0.5,1),     
-              #lwid = c(0.5,0.5),
-              cexRow=0.15,
-              cexCol=0.15,
-              hclustfun=function(x) hclust(x, method="ward.D"))
+   
+    #heatmap.2(as.matrix(mapmat), Rowv = T, Colv = T, col = heat.colors, 
+    #          trace = "none", labRow = rownames(targetmatnmum),
+    #          #lhei = c(0.5,5),     
+    #          #lhei = c(0.5,1),     
+    #          #lwid = c(0.5,0.5),
+    #          cexRow=0.15,
+    #          cexCol=0.15,
+    #          hclustfun=function(x) hclust(x, method="ward.D"))
     # invisible(dev.off())
     cat("Heatmap finished!\n")
   })

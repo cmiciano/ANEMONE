@@ -1,5 +1,5 @@
 genHeatmap <- function(infile_name,genome) {
-  
+  print("in genheat")
   #infile_name=args[1]
   cat("Input file name: ",nrow(infile_name), "\n")
   #inputgenes <-read.delim(infile_name, stringsAsFactors = F, header = F)
@@ -7,6 +7,8 @@ genHeatmap <- function(infile_name,genome) {
   #inputgenes <-read.delim("inputgenes.txt", stringsAsFactors = F, header = F)
   #inputvec <- readLines("../inputgenes.txt")
   #inputgenes <- read.delim("~/Documents/Salk/TFMatrix/33geneuni.txt", header = F)
+  inputgenes <- read.delim("~/Documents/Salk/TFMatrix/ex_tfgenes.txt", header = F)
+  
   #inputgenes <-read.delim("../inputgenes.txt", stringsAsFactors = F, header = F) #works
   inputgenes <- infile_name
   cat("inputgenes\n")
@@ -91,7 +93,7 @@ genHeatmap <- function(infile_name,genome) {
   # cat("Heatmap finished!\n")
   
   
-  
+  print("ret gen")
   return(targetmatnmum) ##Return PCA plot to plot in shiny app
   
 }

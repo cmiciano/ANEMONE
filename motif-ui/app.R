@@ -7,6 +7,9 @@ source('genHeatmap.R')
 library(shiny)
 library(ggplot2)
 library(gplots)
+library(heatmaply)
+library(shinyHeatmaply)
+
 
 #source("census-app/helpers.R")
 #counties <- readRDS("census-app/data/counties.rds")
@@ -135,13 +138,30 @@ server <- function(input, output) {
   })
   
   
+
   
   individualGraph <- reactive({
     if(is.null(input$file1))  
       return(NULL) 
     #newgenes <- convertGenes(input$file1$datapath, input$genome, input$idtype)
     # pcaDF <- generatePCA(input$file1$datapath)
-    pcaDF <- generatePCA(newgenes(),input$genome)
+    progressPCA <- shiny::Progress$new()
+    on.exit(progressPCA$close())
+    progressPCA$set(message = "Making PCA plot", value = 0)
+    
+    
+    # for (i in 1:15) {
+    #   progressPCA$set(value = i)
+    #   Sys.sleep(0.5)
+    # }
+    progressPCA$set(message = "Generating expression matrix", value = 0.50)
+    pcaList <- generatePCA(newgenes(),input$genome)
+    
+    pcaDF <- pcaList[[1]]
+    pc1var <- pcaList[[2]]
+    pc2var <- pcaList[[3]]    
+    
+    progressPCA$set(message = "Returning plot output", value = 0.9)
     
     #ggplot(pcaDF)
     groupnum <- rownames(pcaDF)
@@ -157,9 +177,9 @@ server <- function(input, output) {
       ylab(paste("PC2",round(pc2var * 100, 0), "%")) +
       xlim(xmin, xmax) + 
       ylim(ymin,ymax) +
-      #geom_text(label= groupnum, size = 3, nudge_x = 1 ,nudge_y = 2) +
+      geom_text(label= groupnum, size = 3, nudge_x = 1 ,nudge_y = 2) +
       #scale_fill_discrete(name = "Grouping") + 
-      geom_point(size = 3) +
+      #geom_point(size = 3) +
       #geom_step() +
       #scale_color_manual(values = c("#7FC97F","#F0027F","#386CB0"))
       theme_classic() 
@@ -170,33 +190,6 @@ server <- function(input, output) {
   output$plot <- renderPlot({
     req(individualGraph())
     individualGraph()
-   #  if(is.null(input$file1))  
-   #    return(NULL) 
-   #  #newgenes <- convertGenes(input$file1$datapath, input$genome, input$idtype)
-   # # pcaDF <- generatePCA(input$file1$datapath)
-   #  pcaDF <- generatePCA(newgenes(),input$genome)
-   #  
-   #  #ggplot(pcaDF)
-   #  groupnum <- rownames(pcaDF)
-   #  ## new plot with 150
-   #  xmax <- round(max(pcaDF$PC1))+1
-   #  xmin <- round(min(pcaDF$PC1))-1
-   #  
-   #  ymax <- round(max(pcaDF$PC2))+1
-   #  ymin <- round(min(pcaDF$PC2))-1
-   #  ggplot(pcaDF,aes(PC1 ,PC2)) +
-   #     ggtitle("Genes Grouped by Common Motifs") +
-   #     xlab(paste("PC1",round(pc1var * 100, 0), "%"))+
-   #     ylab(paste("PC2",round(pc2var * 100, 0), "%")) +
-   #     xlim(xmin, xmax) + 
-   #     ylim(ymin,ymax) +
-   #     #geom_text(label= groupnum, size = 3, nudge_x = 1 ,nudge_y = 2) +
-   #     #scale_fill_discrete(name = "Grouping") + 
-   #     geom_point(size = 3) +
-   #     #geom_step() +
-   #     #scale_color_manual(values = c("#7FC97F","#F0027F","#386CB0"))
-   #     theme_classic() 
-   #  # dev.off()
   })
   
   output$save <- downloadHandler(
@@ -208,14 +201,34 @@ server <- function(input, output) {
       dev.off()
     })
   # output$heatmap <- renderTable({
-  #   if(is.null(input$file1))  
-  #     return(NULL) 
+  #   if(is.null(input$file1))
+  #     return(NULL)
   #   map <- genHeatmap(newgenes(),input$genome) #should return table
   #   return(map)
   # })
-  
+
   output$heatmap <- renderPlot({
+     if(is.null(input$file1))
+       return(NULL)
+     mapmat <<- genHeatmap(newgenes(),input$genome) #should return table
+  
+     heatmap.2(as.matrix(mapmat), Rowv = T, Colv = T, col = heat.colors,
+               trace = "none", labRow = rownames(targetmatnmum),
+               #lhei = c(0.5,5),
+               #lhei = c(0.5,1),
+               #lwid = c(0.5,0.5),
+               cexRow=0.15,
+               cexCol=0.15,
+               hclustfun=function(x) hclust(x, method="ward.D"))
+              # invisible(dev.off())
+               cat("Heatmap finished!\n")
+  
+   })
+
+  
+  indHeat <- reactive({
     if(is.null(input$file1))  
+      print("in ind heat")
       return(NULL) 
     mapmat <<- genHeatmap(newgenes(),input$genome) #should return table
     
@@ -227,11 +240,15 @@ server <- function(input, output) {
               cexRow=0.15,
               cexCol=0.15,
               hclustfun=function(x) hclust(x, method="ward.D"))
-             # invisible(dev.off())
-              cat("Heatmap finished!\n")
-              
+    # invisible(dev.off())
+    cat("Heatmap finished!\n")
   })
   
+  # output$heatmap <- renderPlot({
+  #   req(indHeat())
+  #   indHeat()
+  # })
+  # 
   output$downloadData <- downloadHandler(
     filename = function() {
       #"out.txt"
@@ -239,7 +256,12 @@ server <- function(input, output) {
       #paste(input$file1, ".csv", sep = "")
     },
     content = function(file) {
-      write.csv(newgenes(), file, row.names = FALSE, col.names = F, quote = F)
+      pdf("genemotifctint.pdf", 8, 15)
+      par(mar=c(10,2,2,3), cex=1.0)
+      req(indHeat())
+      indHeat()
+      
+      dev.off()
     }
   )
 

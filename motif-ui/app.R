@@ -9,7 +9,8 @@ library(ggplot2)
 library(gplots)
 library(heatmaply)
 library(shinyHeatmaply)
-
+library(bsplus)
+library(htmltools)
 
 #source("census-app/helpers.R")
 #counties <- readRDS("census-app/data/counties.rds")
@@ -31,7 +32,9 @@ ui <- fluidPage(
       #checkboxInput("header", "Header", TRUE),
       
       # Input: Select separator ----
-      radioButtons("sep", "Separator",
+      radioButtons("sep", "Separator:",
+      #radioButtons("sep", "Specify what delimiter your genes are separated by:",
+                                
                    choices = c(Comma = ",",
                                Semicolon = ";",
                                Tab = "\t",
@@ -39,7 +42,8 @@ ui <- fluidPage(
                    selected = " "),
       
       # Input: Select quotes ----
-      radioButtons("quote", "Quote",
+      radioButtons("quote", "Quote:",
+      #radioButtons("quote", "Specify if there are quotes surrounding your gene IDs",
                    choices = c(None = "",
                                "Double Quote" = '"',
                                "Single Quote" = "'"),
@@ -49,20 +53,36 @@ ui <- fluidPage(
       tags$hr(),
       
       # Input: Select number of rows to display ----
-      radioButtons("disp", "Display",
+      #radioButtons("disp", "Specify whether to display head of converted genes or all converted genes",
+      radioButtons("disp", "Display Head/All",
                    choices = c(Head = "head",
                                All = "all"),
                    selected = "head"),
       
+      
       selectInput("genome", "Select Genome:",
-                  c("hg19","mm10")),
+                  c("hg19","mm10"))
+      %>%
+        shinyInput_label_embed(
+          shiny_iconlink() %>%
+            bs_embed_popover(
+              title = "Select what genome your genes belong to", content = "Choose a favorite", placement = "left"
+            )
+        ),
       
       selectInput("idtype", "Select Gene ID type:",
-                  c("geneid","unigene","refseq","ensembl","name")),
+                  c("geneid","unigene","refseq","ensembl","name"))
+      %>%
+        shinyInput_label_embed(
+          shiny_iconlink() %>%
+            bs_embed_popover(
+              title = "Select what Gene ID type your genes are written as", content = "Choose a favorite", placement = "left"
+            )
+        ),
       # Horizontal line ----
       tags$hr(),
       # Input: Select a file ----
-      fileInput("file1", "Upload a list of genes",
+      fileInput("file1", "Upload a list of genes as a text file",
                 multiple = FALSE,
                 accept = c("text/csv",
                            "text/comma-separated-values,text/plain",
@@ -75,23 +95,34 @@ ui <- fluidPage(
     mainPanel(
       
       # Output: Data file ----
-      textOutput("geneout"),
+      #textOutput("geneout"), #You chose
       #tableOutput("contents"),
      
       
       tabsetPanel(type = "tabs",
                   tabPanel("Get Started", 
                            h2("Welcome to the tool, put your genes of interest in a text file"),
-                           h3("1. Select the genome of interest, hg19 or mm10"),
-                           h3("2. Select the current Gene ID type of your data. We will convert it."),
-                           h3("3. Upload your file of gene symbols"),
-                           h3("4. Navigate to the other tabs to see visualizations of your data")),
+                           h4("The goal of this tool is take your differentially expressed genes of interest
+                              and cluster these genes based on the motifs that are associated with each of them.
+                              Our assumption is that genes that occur near similar motifs will be regulated by
+                              similar transcription factors."),
+                           h4("In the first tab, we will convert your gene IDs to gene symbols."),
+                           h4("Afterwards, we will cluster your genes based on their motifs and output them to
+                               a PCA plot and two heatmaps, one that is interactive, and another that is static."),
+                           h4("Finally, we can visualize what transcription factors are regulating these genes
+                              with a network graph."),
+                           
+                           
+                           h2("Steps"),
+                           h4("1. Select the genome of interest, hg19 or mm10"),
+                           h4("2. Select the current Gene ID type of your data. We will convert it."),
+                           h4("3. Upload your file of gene symbols"),
+                           h4("4. Navigate to the other tabs to see visualizations of your data")),
                   tabPanel("Input Genes", tableOutput("contents"), tableOutput("changed")),
                   tabPanel("PCA", plotOutput("plot"),
                             downloadButton("save", "Download")),
                   #tabPanel("Heatmap", tableOutput("heatmap")),
-                  tabPanel("Heatmap", plotlyOutput("heatmap", width = "800px", height = "800px" ),
-                           downloadButton("downloadData", "Download")),
+                  tabPanel("Heatmap", plotlyOutput("heatmap", width = "800px", height = "800px" )),
                   tabPanel("Static Heatmap", plotOutput("statmap", width = "800px", height = "800px"),
                            downloadButton("downloadHeat", "Download")),
                   tabPanel("Network Graph", tableOutput("table"))

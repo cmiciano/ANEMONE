@@ -92,6 +92,8 @@ ui <- fluidPage(
                   #tabPanel("Heatmap", tableOutput("heatmap")),
                   tabPanel("Heatmap", plotlyOutput("heatmap", width = "800px", height = "800px" ),
                            downloadButton("downloadData", "Download")),
+                  tabPanel("Static Heatmap", plotOutput("statmap", width = "800px", height = "800px"),
+                           downloadButton("downloadHeat", "Download")),
                   tabPanel("Network Graph", tableOutput("table"))
       )
     )
@@ -230,7 +232,9 @@ server <- function(input, output) {
      #submat <- mapmat[1:5,1:5]
      #heatmaply(submat)
      #heatmaply(submat, labRow = NA, labCol = NA)
-     heatmaply(mapmat, cexRow = 0.5, cexCol = 0.3)
+     heatmaply(mapmat, cexRow = 0.5, cexCol = 0.3, hclust_method = "ward.D2")
+     
+     #heatmaply(mapmat, cexRow = 0.5, cexCol = 0.3, file = "mapmat.pdf")
      #heatmaply(mtcars)
      
      #heatmaply(mtcars, xlab = "Features", ylab = "Cars") 
@@ -247,26 +251,60 @@ server <- function(input, output) {
      #           cat("Heatmap finished!\n")
   
    })
+  
+  output$statmap <- renderPlot({
+    progressHeat <- shiny::Progress$new()
+    on.exit(progressHeat$close())
+    progressHeat$set(message = "Making heatmap matrix", value = 0)
+    
+    mapmat <<- genHeatmap(newgenes(),input$genome) #should return table
+    
+    heatmap.2(as.matrix(mapmat), Rowv = T, Colv = T, col = heat.colors,
+               trace = "none", labRow = rownames(targetmatnmum),
+               #lhei = c(0.5,5),
+               #lhei = c(0.5,1),
+               #lwid = c(0.5,0.5),
+               cexRow=0.15,
+               cexCol=0.15,
+               hclustfun=function(x) hclust(x, method="ward.D"))
+              # invisible(dev.off())
+               cat("Heatmap finished!\n")
+  })
 
   
   indHeat <- reactive({
     if(is.null(input$file1))  
-      print("in ind heat")
       return(NULL) 
+    print("in ind heat")
+    
     mapmat <<- genHeatmap(newgenes(),input$genome) #should return table
    
-    #heatmap.2(as.matrix(mapmat), Rowv = T, Colv = T, col = heat.colors, 
-    #          trace = "none", labRow = rownames(targetmatnmum),
-    #          #lhei = c(0.5,5),     
-    #          #lhei = c(0.5,1),     
-    #          #lwid = c(0.5,0.5),
-    #          cexRow=0.15,
-    #          cexCol=0.15,
-    #          hclustfun=function(x) hclust(x, method="ward.D"))
-    # invisible(dev.off())
+    heatmap.2(as.matrix(mapmat), Rowv = T, Colv = T, col = heat.colors, 
+              trace = "none", labRow = rownames(targetmatnmum),
+              #lhei = c(0.5,5),     
+              #lhei = c(0.5,1),     
+              #lwid = c(0.5,0.5),
+              cexRow=0.15,
+              cexCol=0.15,
+              hclustfun=function(x) hclust(x, method="ward.D"))
+     invisible(dev.off())
     cat("Heatmap finished!\n")
   })
   
+  output$downloadHeat <- ({
+    downloadHandler(
+      filename = function() { 'heatmap.pdf' },
+      content = function(file) {
+      #png(file, width=1200, height=1200,res=300, pointsize=8)
+      pdf(file)
+      par(mar=c(10,2,2,3), cex=1.0)
+      cat("setup pdf")
+      print(indHeat())
+      cat("Finished in download")
+      dev.off()
+        
+      })
+  })
   # output$heatmap <- renderPlot({
   #   req(indHeat())
   #   indHeat()

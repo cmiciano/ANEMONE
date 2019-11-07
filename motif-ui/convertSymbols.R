@@ -80,9 +80,9 @@ outgenes <- as.character(sub$name)
 outgenes <- outgenes[!outgenes == ""] #Remove blank genes
 outgenes <- data.frame(outgenes)
 names(outgenes) <- "name"
-write.table(outgenes, "outputgenes.txt", row.names = F, col.names = F, quote = F)
-#cat(nrows(inputgenesdata))
-
+#write.table(outgenes, "outputgenes.txt", row.names = F, col.names = F, quote = F)
+#cat("num row", nrow(outgenes))
+#cat("null", is.null(outgenes))
 return(outgenes)
 
 }

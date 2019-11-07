@@ -54,10 +54,10 @@ ui <- fluidPage(
       
       # Input: Select number of rows to display ----
       #radioButtons("disp", "Specify whether to display head of converted genes or all converted genes",
-      radioButtons("disp", "Display Head/All",
-                   choices = c(Head = "head",
-                               All = "all"),
-                   selected = "head"),
+      #radioButtons("disp", "Display Head/All",
+      #             choices = c(Head = "head",
+      #                         All = "all"),
+      #             selected = "head"),
       
       
       selectInput("genome", "Select Genome:",
@@ -118,7 +118,12 @@ ui <- fluidPage(
                            h4("2. Select the current Gene ID type of your data. We will convert it."),
                            h4("3. Upload your file of gene symbols"),
                            h4("4. Navigate to the other tabs to see visualizations of your data")),
-                  tabPanel("Input Genes", tableOutput("contents"), tableOutput("changed")),
+                  tabPanel("Input Genes", 
+                           fluidRow(
+                             column(1,tableOutput("contents")),
+                             column(2,offset = 1, tableOutput("changed"))
+                           )
+                  ),
                   tabPanel("PCA", plotOutput("plot"),
                             downloadButton("save", "Download")),
                   #tabPanel("Heatmap", tableOutput("heatmap")),
@@ -141,36 +146,37 @@ server <- function(input, output) {
     # input$file1 will be NULL initially. After the user selects
     # and uploads a file, head of that data file by default,
     # or all rows if selected, will be shown.
-    
     req(input$file1)
-    
- 
-    
     df <- read.delim(input$file1$datapath,
                    #header = input$header,
                    sep = input$sep,
                    quote = input$quote,
                    stringsAsFactors = F)
+    return(head(df))
     
-    if(input$disp == "head") {
-      return(head(df))
-    }
-    else {
-      return(df)
-    }
-    
-
-  
-
+    #if(input$disp == "head") {
+    #  return(head(df))
+    #}
+    #else {
+    #  return(df)
+    #}
     
   })
+  
 
   output$changed <- renderTable({
     if(is.null(input$file1))  
       return(NULL) 
     
     newgenes <<- reactive(convertGenes(input$file1$datapath, input$genome, input$idtype))
-    return(head(newgenes()))
+    genetab <- head(newgenes())
+    
+    validate(
+      need(nrow(genetab) > 0, "No genes found, make sure you inputted the correct gene ID type")
+    )
+    genetab
+      
+    #return(head(newgenes()))
   })
   
   output$geneout <- renderText({
@@ -195,6 +201,7 @@ server <- function(input, output) {
     #   Sys.sleep(0.5)
     # }
     progressPCA$set(message = "Generating expression matrix", value = 0.50)
+    
     pcaList <- generatePCA(newgenes(),input$genome)
     
     pcaDF <- pcaList[[1]]
@@ -217,6 +224,8 @@ server <- function(input, output) {
       ylab(paste("PC2",round(pc2var * 100, 0), "%")) +
       xlim(xmin, xmax) + 
       ylim(ymin,ymax) +
+      #xlim(-10, 10) + 
+      #ylim(-5,5) +
       #geom_text(label= groupnum, size = 3, nudge_x = 1 ,nudge_y = 2) +
       #scale_fill_discrete(name = "Grouping") + 
       geom_point(size = 3) +
@@ -263,7 +272,9 @@ server <- function(input, output) {
      #submat <- mapmat[1:5,1:5]
      #heatmaply(submat)
      #heatmaply(submat, labRow = NA, labCol = NA)
-     heatmaply(mapmat, cexRow = 0.5, cexCol = 0.3, hclust_method = "ward.D2")
+     heatmaply(mapmat, cexRow = 0.5, cexCol = 0.3,
+               hclustfun = function(x) hclust(x, method="ward.D"))
+               #hclust_method = "ward.D2")
      
      #heatmaply(mapmat, cexRow = 0.5, cexCol = 0.3, file = "mapmat.pdf")
      #heatmaply(mtcars)
@@ -283,24 +294,25 @@ server <- function(input, output) {
   
    })
   
-  output$statmap <- renderPlot({
-    progressHeat <- shiny::Progress$new()
-    on.exit(progressHeat$close())
-    progressHeat$set(message = "Making heatmap matrix", value = 0)
-    
-    mapmat <<- genHeatmap(newgenes(),input$genome) #should return table
-    
-    heatmap.2(as.matrix(mapmat), Rowv = T, Colv = T, col = heat.colors,
-               trace = "none", labRow = rownames(targetmatnmum),
-               #lhei = c(0.5,5),
-               #lhei = c(0.5,1),
-               #lwid = c(0.5,0.5),
-               cexRow=0.15,
-               cexCol=0.15,
-               hclustfun=function(x) hclust(x, method="ward.D"))
-              # invisible(dev.off())
-               cat("Heatmap finished!\n")
-  })
+   output$statmap <- renderPlot({
+     progressHeat <- shiny::Progress$new()
+     on.exit(progressHeat$close())
+     progressHeat$set(message = "Making heatmap matrix", value = 0)
+     
+     mapmat <<- genHeatmap(newgenes(),input$genome) #should return table
+     
+     heatmap.2(as.matrix(mapmat), Rowv = T, Colv = T,  col = viridis(n = 256, alpha = 1, begin
+                                                                     = 0, end = 1, option = "viridis"),
+                trace = "none", labRow = rownames(targetmatnmum),
+                #lhei = c(0.5,5),
+                #lhei = c(0.5,1),
+                #lwid = c(0.5,0.5),
+                cexRow=0.15,
+                cexCol=0.15,
+                hclustfun=function(x) hclust(x, method="ward.D"))
+               # invisible(dev.off())
+                cat("Heatmap finished!\n")
+   })
 
   
   indHeat <- reactive({
@@ -310,13 +322,14 @@ server <- function(input, output) {
     
     mapmat <<- genHeatmap(newgenes(),input$genome) #should return table
    
-    heatmap.2(as.matrix(mapmat), Rowv = T, Colv = T, col = heat.colors, 
+    heatmap.2(as.matrix(mapmat), Rowv = T, Colv = T, col = viridis(n = 256, alpha = 1, begin
+                                                                            = 0, end = 1, option = "viridis"), 
               trace = "none", labRow = rownames(targetmatnmum),
               #lhei = c(0.5,5),     
               #lhei = c(0.5,1),     
               #lwid = c(0.5,0.5),
-              cexRow=0.15,
-              cexCol=0.15,
+              cexRow=0.5,#0.15
+              cexCol=0.3,#0.15
               hclustfun=function(x) hclust(x, method="ward.D"))
      invisible(dev.off())
     cat("Heatmap finished!\n")
@@ -336,11 +349,18 @@ server <- function(input, output) {
         
       })
   })
-  # output$heatmap <- renderPlot({
+  # output$statmap <- renderPlot({
+  #   progressHeat <- shiny::Progress$new()
+  #   on.exit(progressHeat$close())
+  #   progressHeat$set(message = "Making heatmap matrix", value = 0)
+  #   #   
+  #   cat("startind")
   #   req(indHeat())
   #   indHeat()
+  #   cat("finind")
+  #   
   # })
-  # 
+   
   output$downloadData <- downloadHandler(
     filename = function() {
       #"out.txt"

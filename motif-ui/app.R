@@ -130,7 +130,9 @@ ui <- fluidPage(
                   tabPanel("Heatmap", plotlyOutput("heatmap", width = "800px", height = "800px" )),
                   tabPanel("Static Heatmap", plotOutput("statmap", width = "800px", height = "800px"),
                            downloadButton("downloadHeat", "Download")),
-                  tabPanel("Network Graph", tableOutput("table"))
+                  tabPanel("Network Graph", visNetworkOutput("net"),
+                           downloadButton("downloadNet", "Download"))
+                  
       )
     )
     
@@ -232,7 +234,6 @@ server <- function(input, output) {
       #geom_step() +
       #scale_color_manual(values = c("#7FC97F","#F0027F","#386CB0"))
       theme_classic() 
-    # dev.off()
   })
   
   
@@ -247,7 +248,9 @@ server <- function(input, output) {
       #ggsave(p(), filename = file)
       req(individualGraph())
       ggsave(file, plot = individualGraph(), device = 'png')
-      dev.off()
+      while (!is.null(dev.list()))  dev.off()
+      
+      #dev.off()
     })
   # output$heatmap <- renderTable({
   #   if(is.null(input$file1))
@@ -272,46 +275,43 @@ server <- function(input, output) {
      #submat <- mapmat[1:5,1:5]
      #heatmaply(submat)
      #heatmaply(submat, labRow = NA, labCol = NA)
-     heatmaply(mapmat, cexRow = 0.5, cexCol = 0.3,
-               hclustfun = function(x) hclust(x, method="ward.D"))
+     heatmaply(mtcars, cexRow = 0.5, cexCol = 0.3,
+               
+     #heatmaply(mapmat, cexRow = 0.5, cexCol = 0.3,
+               hclustfun = function(x) hclust(x, method="ward.D"),
+               #distfun = dist,
+               seriate = "mean",
+               row_dend_left = TRUE, 
+               plot_method = "plotly")
                #hclust_method = "ward.D2")
-     
-     #heatmaply(mapmat, cexRow = 0.5, cexCol = 0.3, file = "mapmat.pdf")
-     #heatmaply(mtcars)
-     
-     #heatmaply(mtcars, xlab = "Features", ylab = "Cars") 
-               ##WORKS
-     # heatmap.2(as.matrix(mapmat), Rowv = T, Colv = T, col = heat.colors,
-     #           trace = "none", labRow = rownames(targetmatnmum),
-     #           #lhei = c(0.5,5),
-     #           #lhei = c(0.5,1),
-     #           #lwid = c(0.5,0.5),
-     #           cexRow=0.15,
-     #           cexCol=0.15,
-     #           hclustfun=function(x) hclust(x, method="ward.D"))
-     #          # invisible(dev.off())
-     #           cat("Heatmap finished!\n")
   
    })
   
+   ##currently displayed heatmap displays output from this heatmap
    output$statmap <- renderPlot({
      progressHeat <- shiny::Progress$new()
      on.exit(progressHeat$close())
      progressHeat$set(message = "Making heatmap matrix", value = 0)
      
      mapmat <<- genHeatmap(newgenes(),input$genome) #should return table
-     
+     data("mtcars")
+     #indHeat()
+     #heatmap.2(as.matrix(mtcars), Rowv = T, Colv = T,  col = viridis(n = 256, alpha = 1, begin
      heatmap.2(as.matrix(mapmat), Rowv = T, Colv = T,  col = viridis(n = 256, alpha = 1, begin
-                                                                     = 0, end = 1, option = "viridis"),
-                trace = "none", labRow = rownames(targetmatnmum),
+                                                                    = 0, end = 1, option = "viridis"),
+                #trace = "none", labRow = rownames(targetmatnmum),
+                trace = "none", labRow = rownames(mtcars),
+    
                 #lhei = c(0.5,5),
                 #lhei = c(0.5,1),
                 #lwid = c(0.5,0.5),
-                cexRow=0.15,
-                cexCol=0.15,
-                hclustfun=function(x) hclust(x, method="ward.D"))
+                cexRow=0.5,
+                cexCol=0.3,
+                hclustfun=function(x) hclust(x, method="ward.D")
+                #distfun = dist
+               )
                # invisible(dev.off())
-                cat("Heatmap finished!\n")
+        #        cat("Heatmap finished!\n")
    })
 
   
@@ -321,17 +321,21 @@ server <- function(input, output) {
     print("in ind heat")
     
     mapmat <<- genHeatmap(newgenes(),input$genome) #should return table
-   
+    data("mtcars")
+    #heatmap.2(as.matrix(mtcars), Rowv = T, Colv = T, col = viridis(n = 256, alpha = 1, begin
     heatmap.2(as.matrix(mapmat), Rowv = T, Colv = T, col = viridis(n = 256, alpha = 1, begin
                                                                             = 0, end = 1, option = "viridis"), 
-              trace = "none", labRow = rownames(targetmatnmum),
+                trace = "none", labRow = rownames(targetmatnmum),
+              # trace = "none", labRow = rownames(mtcars),
+    
               #lhei = c(0.5,5),     
               #lhei = c(0.5,1),     
               #lwid = c(0.5,0.5),
               cexRow=0.5,#0.15
               cexCol=0.3,#0.15
-              hclustfun=function(x) hclust(x, method="ward.D"))
-     invisible(dev.off())
+              hclustfun=function(x) hclust(x, method="ward.D")
+              )
+     #invisible(dev.off())
     cat("Heatmap finished!\n")
   })
   
@@ -339,14 +343,15 @@ server <- function(input, output) {
     downloadHandler(
       filename = function() { 'heatmap.pdf' },
       content = function(file) {
+      #req(indHeat())
       #png(file, width=1200, height=1200,res=300, pointsize=8)
       pdf(file)
       par(mar=c(10,2,2,3), cex=1.0)
       cat("setup pdf")
       print(indHeat())
       cat("Finished in download")
-      dev.off()
-        
+      while (!is.null(dev.list()))  dev.off()
+      
       })
   })
   # output$statmap <- renderPlot({
@@ -361,23 +366,47 @@ server <- function(input, output) {
   #   
   # })
    
-  output$downloadData <- downloadHandler(
-    filename = function() {
-      #"out.txt"
-      gsub(".*\\.","outputgenes.",input$file1)
-      #paste(input$file1, ".csv", sep = "")
-    },
-    content = function(file) {
-      pdf("genemotifctint.pdf", 8, 15)
-      par(mar=c(10,2,2,3), cex=1.0)
-      req(indHeat())
-      indHeat()
-      
-      dev.off()
-    }
-  )
-
+  # output$downloadData <- downloadHandler(
+  #   filename = function() {
+  #     #"out.txt"
+  #     gsub(".*\\.","outputgenes.",input$file1)
+  #     #paste(input$file1, ".csv", sep = "")
+  #   },
+  #   content = function(file) {
+  #     pdf("genemotifctint.pdf", 8, 15)
+  #     par(mar=c(10,2,2,3), cex=1.0)
+  #     req(indHeat())
+  #     indHeat()
+  #     
+  #     dev.off()
+  #   }
+  # )
   
+  nodes <- data.frame(id = 1:3)
+  edges <- data.frame(from = c(1,2), to = c(1,3))
+  network <- visNetwork(nodes, edges, width = "100%")
+  
+  output$net  <- renderVisNetwork({
+  #  ... visOptions(nodesIdSelection = TRUE)
+    #visout <- visNetwork(nodes, edges, width = "100%")
+    #visout
+    network
+  }) # created input$mynetwork_selected
+  
+  #visSave(network, file = "network.html")
+
+
+  output$downloadNet <- ({
+    downloadHandler(
+      filename = function() { 'network.html' },
+      content = function(file) {
+        cat("setup net")
+        visSave(network, file)
+        cat("Finished in download net")
+        while (!is.null(dev.list()))  dev.off()
+        
+      })
+  })
   
   
 }

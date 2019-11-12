@@ -4,6 +4,7 @@
 source('convertSymbols.R')
 source('subsetGenes.R')
 source('genHeatmap.R')
+source('sig_tf_matrix_motif.R')
 library(shiny)
 library(ggplot2)
 library(gplots)
@@ -275,9 +276,9 @@ server <- function(input, output) {
      #submat <- mapmat[1:5,1:5]
      #heatmaply(submat)
      #heatmaply(submat, labRow = NA, labCol = NA)
-     heatmaply(mtcars, cexRow = 0.5, cexCol = 0.3,
+     #heatmaply(mtcars, cexRow = 0.5, cexCol = 0.3,
                
-     #heatmaply(mapmat, cexRow = 0.5, cexCol = 0.3,
+     heatmaply(mapmat, cexRow = 0.5, cexCol = 0.3,
                hclustfun = function(x) hclust(x, method="ward.D"),
                #distfun = dist,
                seriate = "mean",
@@ -299,8 +300,8 @@ server <- function(input, output) {
      #heatmap.2(as.matrix(mtcars), Rowv = T, Colv = T,  col = viridis(n = 256, alpha = 1, begin
      heatmap.2(as.matrix(mapmat), Rowv = T, Colv = T,  col = viridis(n = 256, alpha = 1, begin
                                                                     = 0, end = 1, option = "viridis"),
-                #trace = "none", labRow = rownames(targetmatnmum),
-                trace = "none", labRow = rownames(mtcars),
+                trace = "none", labRow = rownames(mapmat),
+                #trace = "none", labRow = rownames(mtcars),
     
                 #lhei = c(0.5,5),
                 #lhei = c(0.5,1),
@@ -325,7 +326,7 @@ server <- function(input, output) {
     #heatmap.2(as.matrix(mtcars), Rowv = T, Colv = T, col = viridis(n = 256, alpha = 1, begin
     heatmap.2(as.matrix(mapmat), Rowv = T, Colv = T, col = viridis(n = 256, alpha = 1, begin
                                                                             = 0, end = 1, option = "viridis"), 
-                trace = "none", labRow = rownames(targetmatnmum),
+                trace = "none", labRow = rownames(mapmat),
               # trace = "none", labRow = rownames(mtcars),
     
               #lhei = c(0.5,5),     
@@ -384,13 +385,15 @@ server <- function(input, output) {
   
   nodes <- data.frame(id = 1:3)
   edges <- data.frame(from = c(1,2), to = c(1,3))
-  network <- visNetwork(nodes, edges, width = "100%")
+  #network <- visNetwork(nodes, edges, width = "100%")
   
   output$net  <- renderVisNetwork({
   #  ... visOptions(nodesIdSelection = TRUE)
     #visout <- visNetwork(nodes, edges, width = "100%")
     #visout
-    network
+    networks <<- makenetgraph(newgenes(), input$genome, 0.05)
+    networks[[1]]
+    #networks[[2]]
   }) # created input$mynetwork_selected
   
   #visSave(network, file = "network.html")

@@ -128,12 +128,19 @@ ui <- fluidPage(
                   tabPanel("PCA", plotOutput("plot"),
                             downloadButton("save", "Download")),
                   #tabPanel("Heatmap", tableOutput("heatmap")),
-                  tabPanel("Heatmap", plotlyOutput("heatmap", width = "800px", height = "800px" )),
-                  tabPanel("Static Heatmap", plotOutput("statmap", width = "800px", height = "800px"),
-                           downloadButton("downloadHeat", "Download")),
-                  tabPanel("Network Graph", visNetworkOutput("net"),
-                           downloadButton("downloadNet", "Download"))
-                  
+                  #tabPanel("Heatmap", plotlyOutput("heatmap", width = "800px", height = "800px" )),
+                  #tabPanel("Static Heatmap", plotOutput("statmap", width = "800px", height = "800px"),
+                  #         downloadButton("downloadHeat", "Download")),
+                  tabPanel("Heatmaps", uiOutput("heattab")),
+                  tabPanel("Network Graph", uiOutput("nettab"))
+                           #          visNetworkOutput("net",  width = "700px", height = "700px"),
+                           #          downloadButton("downloadNet", "Download"))
+                  # tabPanel("Network Graph", 
+                  #          visNetworkOutput("net",  width = "700px", height = "700px"),
+                  #          downloadButton("downloadNet", "Download")),
+                  # tabPanel("Network Graph", 
+                  #          visNetworkOutput("circ",  width = "700px", height = "700px"))
+
       )
     )
     
@@ -315,6 +322,18 @@ server <- function(input, output) {
         #        cat("Heatmap finished!\n")
    })
 
+   output$heattab <- renderUI({
+     tabsetPanel(id = "heattab", 
+                 tabPanel("Interactive Heatmap", 
+                          tabPanel("Heatmap", plotlyOutput("heatmap", width = "800px", height = "800px" ))
+                 ),
+                 tabPanel("Static Heatmap",
+                          tabPanel("Static Heatmap", plotOutput("statmap", width = "800px", height = "800px")),
+                          downloadButton("downloadHeat", "Download")
+                 )
+     )
+   })
+     
   
   indHeat <- reactive({
     if(is.null(input$file1))  
@@ -383,9 +402,7 @@ server <- function(input, output) {
   #   }
   # )
   
-  nodes <- data.frame(id = 1:3)
-  edges <- data.frame(from = c(1,2), to = c(1,3))
-  #network <- visNetwork(nodes, edges, width = "100%")
+
   
   output$net  <- renderVisNetwork({
   #  ... visOptions(nodesIdSelection = TRUE)
@@ -395,6 +412,34 @@ server <- function(input, output) {
     networks[[1]]
     #networks[[2]]
   }) # created input$mynetwork_selected
+  
+  output$circ  <- renderVisNetwork({
+    #  ... visOptions(nodesIdSelection = TRUE)
+    #visout <- visNetwork(nodes, edges, width = "100%")
+    #visout
+    cat("In circ")
+    networks <<- makenetgraph(newgenes(), input$genome, 0.05)
+    networks[[2]]
+    #networks[[2]]
+  }) 
+  
+  output$nettab <- renderUI({
+    tabsetPanel(id = "subTabPanel1", 
+                tabPanel("Network-Style", 
+                         visNetworkOutput("net",  width = "700px", height = "500px")#,
+                         
+                ),
+                tabPanel("Circle-Style",
+                         visNetworkOutput("circ",  width = "700px", height = "500px")#,
+                         #downloadButton("downloadNet", "Download")
+                         
+                )
+    )
+    
+    
+    
+  })
+ # created input$mynetwork_selected
   
   #visSave(network, file = "network.html")
 

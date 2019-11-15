@@ -204,12 +204,6 @@ server <- function(input, output) {
     progressPCA <- shiny::Progress$new()
     on.exit(progressPCA$close())
     progressPCA$set(message = "Making PCA plot", value = 0)
-    
-    
-    # for (i in 1:15) {
-    #   progressPCA$set(value = i)
-    #   Sys.sleep(0.5)
-    # }
     progressPCA$set(message = "Generating expression matrix", value = 0.50)
     
     pcaList <- generatePCA(newgenes(),input$genome)
@@ -234,13 +228,7 @@ server <- function(input, output) {
       ylab(paste("PC2",round(pc2var * 100, 0), "%")) +
       xlim(xmin, xmax) + 
       ylim(ymin,ymax) +
-      #xlim(-10, 10) + 
-      #ylim(-5,5) +
-      #geom_text(label= groupnum, size = 3, nudge_x = 1 ,nudge_y = 2) +
-      #scale_fill_discrete(name = "Grouping") + 
       geom_point(size = 3) +
-      #geom_step() +
-      #scale_color_manual(values = c("#7FC97F","#F0027F","#386CB0"))
       theme_classic() 
   })
   
@@ -253,46 +241,36 @@ server <- function(input, output) {
   output$save <- downloadHandler(
     filename = "save.png" ,
     content = function(file) {
-      #ggsave(p(), filename = file)
       req(individualGraph())
       ggsave(file, plot = individualGraph(), device = 'png')
       while (!is.null(dev.list()))  dev.off()
       
       #dev.off()
     })
-  # output$heatmap <- renderTable({
-  #   if(is.null(input$file1))
-  #     return(NULL)
-  #   map <- genHeatmap(newgenes(),input$genome) #should return table
-  #   return(map)
-  # })
+  values <- reactiveValues()
+  
 
   output$heatmap <- renderPlotly({
-     if(is.null(input$file1))
-       return(NULL)
-    
+     #if(is.null(input$file1))
+     # return(NULL)
      progressHeat <- shiny::Progress$new()
      on.exit(progressHeat$close())
-     progressHeat$set(message = "Making heatmap matrix", value = 0)
+     progressHeat$set(message = "Making interactive heatmap", value = 0)
     
      mapmat <<- genHeatmap(newgenes(),input$genome) #should return table
      data("mtcars")
      progressHeat$set(message = "Plotting heatmap", value = 0.50)
      cat("nrows mapmat:", nrow(mapmat))
-     #mapmat
-     #submat <- mapmat[1:5,1:5]
-     #heatmaply(submat)
-     #heatmaply(submat, labRow = NA, labCol = NA)
+
+     dendint <- values$dendstat
      #heatmaply(mtcars, cexRow = 0.5, cexCol = 0.3,
-               
      heatmaply(mapmat, cexRow = 0.5, cexCol = 0.3,
                hclustfun = function(x) hclust(x, method="ward.D"),
-               #distfun = dist,
+               Colv = rev(dendint),
                seriate = "mean",
                row_dend_left = TRUE, 
                plot_method = "plotly")
-               #hclust_method = "ward.D2")
-  
+
    })
   
    ##currently displayed heatmap displays output from this heatmap
@@ -300,37 +278,36 @@ server <- function(input, output) {
      progressHeat <- shiny::Progress$new()
      on.exit(progressHeat$close())
      progressHeat$set(message = "Making heatmap matrix", value = 0)
-     
      mapmat <<- genHeatmap(newgenes(),input$genome) #should return table
-     data("mtcars")
-     #indHeat()
-     #heatmap.2(as.matrix(mtcars), Rowv = T, Colv = T,  col = viridis(n = 256, alpha = 1, begin
-     heatmap.2(as.matrix(mapmat), Rowv = T, Colv = T,  col = viridis(n = 256, alpha = 1, begin
-                                                                    = 0, end = 1, option = "viridis"),
+     statobj <- heatmap.2(as.matrix(mapmat), Rowv = T, Colv = T,
+                          col = viridis(n = 256, alpha = 1, begin = 0, end = 1, option = "viridis"),
                 trace = "none", labRow = rownames(mapmat),
-                #trace = "none", labRow = rownames(mtcars),
-    
-                #lhei = c(0.5,5),
-                #lhei = c(0.5,1),
-                #lwid = c(0.5,0.5),
                 cexRow=0.5,
                 cexCol=0.3,
                 hclustfun=function(x) hclust(x, method="ward.D")
                 #distfun = dist
                )
-               # invisible(dev.off())
-        #        cat("Heatmap finished!\n")
+     statobj
+     statdend <- statobj[["colDendrogram"]]
+     values$dendstat <- statdend
+     
    })
 
+
+
+   
+   
+   
    output$heattab <- renderUI({
      tabsetPanel(id = "heattab", 
-                 tabPanel("Interactive Heatmap", 
-                          tabPanel("Heatmap", plotlyOutput("heatmap", width = "800px", height = "800px" ))
-                 ),
                  tabPanel("Static Heatmap",
-                          tabPanel("Static Heatmap", plotOutput("statmap", width = "800px", height = "800px")),
+                          tabPanel("Static Heatmap", plotOutput("statmap", width = "800px", height = "600px")),
                           downloadButton("downloadHeat", "Download")
+                 ),
+                 tabPanel("Interactive Heatmap", 
+                          tabPanel("Heatmap", plotlyOutput("heatmap", width = "800px", height = "600px" ))
                  )
+             
      )
    })
      
@@ -374,64 +351,36 @@ server <- function(input, output) {
       
       })
   })
-  # output$statmap <- renderPlot({
-  #   progressHeat <- shiny::Progress$new()
-  #   on.exit(progressHeat$close())
-  #   progressHeat$set(message = "Making heatmap matrix", value = 0)
-  #   #   
-  #   cat("startind")
-  #   req(indHeat())
-  #   indHeat()
-  #   cat("finind")
-  #   
-  # })
-   
-  # output$downloadData <- downloadHandler(
-  #   filename = function() {
-  #     #"out.txt"
-  #     gsub(".*\\.","outputgenes.",input$file1)
-  #     #paste(input$file1, ".csv", sep = "")
-  #   },
-  #   content = function(file) {
-  #     pdf("genemotifctint.pdf", 8, 15)
-  #     par(mar=c(10,2,2,3), cex=1.0)
-  #     req(indHeat())
-  #     indHeat()
-  #     
-  #     dev.off()
-  #   }
-  # )
-  
 
+   
   
   output$net  <- renderVisNetwork({
-  #  ... visOptions(nodesIdSelection = TRUE)
-    #visout <- visNetwork(nodes, edges, width = "100%")
-    #visout
     networks <<- makenetgraph(newgenes(), input$genome, 0.05)
     networks[[1]]
     #networks[[2]]
+    
+    values$netobj <- networks[[1]]
   }) # created input$mynetwork_selected
   
   output$circ  <- renderVisNetwork({
-    #  ... visOptions(nodesIdSelection = TRUE)
-    #visout <- visNetwork(nodes, edges, width = "100%")
-    #visout
-    cat("In circ")
     networks <<- makenetgraph(newgenes(), input$genome, 0.05)
     networks[[2]]
     #networks[[2]]
+    values$circobj <- networks[[2]]
+    
   }) 
   
   output$nettab <- renderUI({
     tabsetPanel(id = "subTabPanel1", 
                 tabPanel("Network-Style", 
-                         visNetworkOutput("net",  width = "700px", height = "500px")#,
+                         visNetworkOutput("net",  width = "900px", height = "500px"),
+                         downloadButton("downloadNet", "Download")
+                         
                          
                 ),
                 tabPanel("Circle-Style",
-                         visNetworkOutput("circ",  width = "700px", height = "500px")#,
-                         #downloadButton("downloadNet", "Download")
+                         visNetworkOutput("circ",  width = "900px", height = "500px"),
+                         downloadButton("downloadCirc", "Download")
                          
                 )
     )
@@ -449,9 +398,21 @@ server <- function(input, output) {
       filename = function() { 'network.html' },
       content = function(file) {
         cat("setup net")
-        visSave(network, file)
+        finalnet <- values$netobj
+        visSave(finalnet, file)
         cat("Finished in download net")
-        while (!is.null(dev.list()))  dev.off()
+        
+      })
+  })
+  
+  output$downloadCirc <- ({
+    downloadHandler(
+      filename = function() { 'circ.html' },
+      content = function(file) {
+        cat("setup net")
+        finalcirc <- values$circobj
+        visSave(finalcirc, file)
+        cat("Finished in download net")
         
       })
   })

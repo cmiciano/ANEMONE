@@ -7,7 +7,7 @@ genHeatmap <- function(infile_name,genome) {
   #inputgenes <-read.delim("inputgenes.txt", stringsAsFactors = F, header = F)
   #inputvec <- readLines("../inputgenes.txt")
   #inputgenes <- read.delim("~/Documents/Salk/TFMatrix/33geneuni.txt", header = F)
-  #inputgenes <- read.delim("~/Documents/Salk/TFMatrix/ex_tfgenes.txt", header = F)
+  inputgenes <- read.delim("~/Documents/Salk/TFMatrix/ex_tfgenes.txt", header = F)
   
   #inputgenes <-read.delim("../inputgenes.txt", stringsAsFactors = F, header = F) #works
   inputgenes <- infile_name
@@ -81,14 +81,83 @@ genHeatmap <- function(infile_name,genome) {
   # #par(mar=c(10,2,2,3), cex=1.0)
   # par(mar=c(1,1,1,1), cex=1.0)
   # 
-  # heatmap.2(as.matrix(targetmatnmum), Rowv = T, Colv = T, col = heat.colors, 
-  #           trace = "none", labRow = rownames(targetmatnmum),
-  #           #lhei = c(0.5,5),     
-  #           lhei = c(0.5,1),     
-  #           #lwid = c(0.5,0.5),
-  #           cexRow=0.15,
-  #           cexCol=0.15)
-  #           #hclustfun=function(x) hclust(x, method="ward.D"))
+  library(gplots)
+  # statobj<- heatmap.2(as.matrix(targetmatnmum), Rowv = T, Colv = T, col = heat.colors,
+  #            trace = "none", labRow = rownames(targetmatnmum),
+  #            #lhei = c(0.5,5),
+  #            lhei = c(0.5,1),
+  #            #lwid = c(0.5,0.5),
+  #            cexRow=0.15,
+  #            cexCol=0.15,
+  #            hclustfun=function(x) hclust(x, method="ward.D")
+  #            )
+  #statcol <- statobj[["colInd"]]
+  #statobj[["colDendrogram"]]
+  # 
+  # 
+  # 
+  # 
+  # 
+  # 
+  #coldend <- statobj$colDendrogram
+  # plot(coldend)
+  # coldend
+  # coldend <- as.dendrogram(dend)
+  # 
+  #  tfnameind <- statobj[["colInd"]]
+  #  reordtfnames <- colnames(targetmatnmum)[tfnameind]  ### 261 TFs
+  #  tfb4reord <- names(targetmatnmum)
+  #  reord <- targetmatnmum[,match(reordtfnames, tfb4reord)]
+  # 
+  # 
+  # 
+  # #rowdend <- statobj$rowDendrogram
+  # #rowdend
+  # #rowdend <- as.dendrogram(rowdend)
+  # #plot(rowdend)
+  # 
+  # 
+  # #genenameind <- statobj[["rowInd"]]
+  # #reordgenenames <- rownames(targetmatnmum)[genenameind]  ### 261 TFs
+  # #reordgenenames <- rev(reordgenenames)
+  # #namesb4reord <- rownames(targetmatnmum)
+  # 
+  # #reord <- reord[match(reordgenenames, namesb4reord),]
+  # 
+  # #cexRow = 0.5, cexCol = 0.3,
+  # #hclustfun = function(x) hclust(x, method="ward.D")
+    
+  ## must be reversed for some reason  
+  library(heatmaply)
+  #heatmaply(targetmatnmum, Colv = coldend)
+  #heatmaply(mtcars, 
+  #          Colv = rev(coldend),
+  #          hclustfun=function(x) hclust(x, method="ward.D"), 
+  #          seriate = "mean",
+  #          row_dend_left = T)
+  
+  # ##heatmaply(matrix(targetmatnmum), Colv = tfnameind) also bricks computer
+  # #heatmaply(targetmatnmum, seriate = "mean", row_dend_left = T)# same
+  # #heatmaply(targetmatnmum)# same
+  # 
+  # heatmaply(reord, cexRow = 0.5, cexCol = 0.3, Colv = F,
+  #           hclustfun = function(x) hclust(x, method="ward.D"),
+  #           #distfun = dist,
+  #           seriate = "mean",
+  #           row_dend_left = TRUE, 
+  #           plot_method = "plotly")
+  # 
+  # 
+  # library(dendextend)
+  # collab <- dend %>% labels
+  # 
+  # dend15 %>%
+  #   set("labels_colors") %>% 
+  #   set("branches_k_color") %>% 
+  #   rotate(as.character(5:1)) %>% #rotate to match labels new order
+  #   plot(main = "Rotated tree\n based on labels")
+  # 
+  # 
   # invisible(dev.off())
   # cat("Heatmap finished!\n")
   

@@ -12,12 +12,15 @@ library(heatmaply)
 library(shinyHeatmaply)
 library(bsplus)
 library(htmltools)
+library(shinythemes)
+
 
 #source("census-app/helpers.R")
 #counties <- readRDS("census-app/data/counties.rds")
 
 # Define UI for data upload app ----
 ui <- fluidPage(
+  theme = shinytheme("cosmo"),
   
   # App title ----
   titlePanel("Motif/Gene Clustering Tool"),
@@ -80,6 +83,11 @@ ui <- fluidPage(
               title = "Select what Gene ID type your genes are written as", content = "Choose a favorite", placement = "left"
             )
         ),
+      
+      sliderInput("decimal", "Significance Cutoff:",
+                  min = 0, max = 1,
+                  value = 0.05, step = 0.05),
+      
       # Horizontal line ----
       tags$hr(),
       # Input: Select a file ----
@@ -88,6 +96,7 @@ ui <- fluidPage(
                 accept = c("text/csv",
                            "text/comma-separated-values,text/plain",
                            ".csv"))
+      
       
       
     ),
@@ -122,7 +131,8 @@ ui <- fluidPage(
                   tabPanel("Input Genes", 
                            fluidRow(
                              column(1,tableOutput("contents")),
-                             column(2,offset = 1, tableOutput("changed"))
+                             column(2,offset = 1, tableOutput("changed"), 
+                                    downloadButton("downloadGenes", "Download Converted Genes"))
                            )
                   ),
                   tabPanel("PCA", plotOutput("plot"),
@@ -149,6 +159,7 @@ ui <- fluidPage(
 
 # Define server logic to read selected file ----
 server <- function(input, output) {
+  values <- reactiveValues()
   
 
   output$contents <- renderTable({
@@ -178,7 +189,8 @@ server <- function(input, output) {
     if(is.null(input$file1))  
       return(NULL) 
     
-    newgenes <<- reactive(convertGenes(input$file1$datapath, input$genome, input$idtype))
+    newgenes <- reactive(convertGenes(input$file1$datapath, input$genome, input$idtype))
+    values$convertedgenes <- newgenes
     genetab <- head(newgenes())
     
     validate(
@@ -188,6 +200,16 @@ server <- function(input, output) {
       
     #return(head(newgenes()))
   })
+  
+  output$downloadGenes <- downloadHandler(
+    filename = function() {
+      "convertedGenes.txt"
+    },
+    content = function(file) {
+      finalgenes <- values$convertedgenes
+      write.table(finalgenes(), file, row.names = FALSE, quote = F, sep="\t")
+    }
+  )
   
   output$geneout <- renderText({
     paste("You chose", input$genome)
@@ -206,7 +228,8 @@ server <- function(input, output) {
     progressPCA$set(message = "Making PCA plot", value = 0)
     progressPCA$set(message = "Generating expression matrix", value = 0.50)
     
-    pcaList <- generatePCA(newgenes(),input$genome)
+    genesPCA <- values$convertedgenes
+    pcaList <- generatePCA(genesPCA(),input$genome)
     
     pcaDF <- pcaList[[1]]
     pc1var <- pcaList[[2]]
@@ -247,7 +270,6 @@ server <- function(input, output) {
       
       #dev.off()
     })
-  values <- reactiveValues()
   
 
   output$heatmap <- renderPlotly({
@@ -352,18 +374,32 @@ server <- function(input, output) {
       })
   })
 
-   
+  #values$fdroutput <- 
   
   output$net  <- renderVisNetwork({
-    networks <<- makenetgraph(newgenes(), input$genome, 0.05)
+    
+    progressNet <- shiny::Progress$new()
+    on.exit(progressNet$close())
+    progressNet$set(message = "Making Network-Style Graph", value = 0.50)
+    networks <<- makenetgraph(newgenes(), input$genome, input$decimal)
+    progressNet$set(message = "Rendering Graph", value = 0.80)
+    
     networks[[1]]
     #networks[[2]]
     
     values$netobj <- networks[[1]]
+    
+    #validate(
+    #  need(nrow(networks[[3]]) > 0, "No DE genes based on parameters for fdrout try changing parameters")
+    #)
   }) # created input$mynetwork_selected
   
   output$circ  <- renderVisNetwork({
-    networks <<- makenetgraph(newgenes(), input$genome, 0.05)
+    progressCirc <- shiny::Progress$new()
+    on.exit(progressCirc$close())
+    progressCirc$set(message = "Making Circle-Style Graph", value = 0.50)
+    networks <<- makenetgraph(newgenes(), input$genome, input$decimal)
+    progressCirc$set(message = "Rendering Graph", value = 0.80)
     networks[[2]]
     #networks[[2]]
     values$circobj <- networks[[2]]
@@ -382,11 +418,32 @@ server <- function(input, output) {
                          visNetworkOutput("circ",  width = "900px", height = "500px"),
                          downloadButton("downloadCirc", "Download")
                          
+                ),
+                tabPanel("TF Table",
+                         tableOutput("sigTFs"),
+                         downloadButton("downloadsigTFs", "Download")
+                         
                 )
     )
     
     
     
+    
+  })
+  
+  output$sigTFs <- renderTable({
+    if(is.null(input$file1))  
+      return(NULL) 
+    
+    progressSig <- shiny::Progress$new()
+    on.exit(progressSig$close())
+    progressSig$set(message = "Generating Table of Significant Transcription Factors", value = 0.50)
+    networks <<- makenetgraph(newgenes(), input$genome, input$decimal)
+    progressSig$set(message = "Rendering Table", value = 0.80)
+    
+    networks[[3]]
+    values$sigTFobj <- networks[[3]]
+   
   })
  # created input$mynetwork_selected
   
@@ -416,6 +473,16 @@ server <- function(input, output) {
         
       })
   })
+  
+  output$downloadsigTFs <- downloadHandler(
+    filename = function() {
+      "sigTFs.txt"
+    },
+    content = function(file) {
+      finalsigTFs <- values$sigTFobj
+      write.table(finalsigTFs, file, row.names = FALSE, quote = F, sep="\t")
+    }
+  )
   
   
 }

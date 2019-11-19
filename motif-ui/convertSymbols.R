@@ -90,5 +90,5 @@ return(outgenes)
 
 
 ####3
-outfile <- convertGenes("../inputgenes.txt", "hg19", "name")
+#outfile <- convertGenes("../inputgenes.txt", "hg19", "name")
 

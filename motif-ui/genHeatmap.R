@@ -167,7 +167,7 @@ genHeatmap <- function(infile_name,genome) {
   
   return(targetmatnmum) ##Return dataframe
   #return(heatobj) ##Return heatmap object
-  
+   #fsfsf
   
 }
 

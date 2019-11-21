@@ -7,7 +7,7 @@ genHeatmap <- function(infile_name,genome) {
   #inputgenes <-read.delim("inputgenes.txt", stringsAsFactors = F, header = F)
   #inputvec <- readLines("../inputgenes.txt")
   #inputgenes <- read.delim("~/Documents/Salk/TFMatrix/33geneuni.txt", header = F)
-  inputgenes <- read.delim("~/Documents/Salk/TFMatrix/ex_tfgenes.txt", header = F)
+  #inputgenes <- read.delim("~/Documents/Salk/TFMatrix/ex_tfgenes.txt", header = F)
   
   #inputgenes <-read.delim("../inputgenes.txt", stringsAsFactors = F, header = F) #works
   inputgenes <- infile_name
@@ -81,7 +81,7 @@ genHeatmap <- function(infile_name,genome) {
   # #par(mar=c(10,2,2,3), cex=1.0)
   # par(mar=c(1,1,1,1), cex=1.0)
   # 
-  library(gplots)
+  #library(gplots)
   # statobj<- heatmap.2(as.matrix(targetmatnmum), Rowv = T, Colv = T, col = heat.colors,
   #            trace = "none", labRow = rownames(targetmatnmum),
   #            #lhei = c(0.5,5),
@@ -128,7 +128,7 @@ genHeatmap <- function(infile_name,genome) {
   # #hclustfun = function(x) hclust(x, method="ward.D")
     
   ## must be reversed for some reason  
-  library(heatmaply)
+  #library(heatmaply)
   #heatmaply(targetmatnmum, Colv = coldend)
   #heatmaply(mtcars, 
   #          Colv = rev(coldend),

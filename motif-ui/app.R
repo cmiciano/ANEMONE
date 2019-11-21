@@ -2,18 +2,18 @@
 # This is a Shiny web application. You can run the application by clicking
 # the 'Run App' button above.
 source('convertSymbols.R')
-source('subsetGenes.R')
+source('subsetgenes.R')
 source('genHeatmap.R')
 source('sig_tf_matrix_motif.R')
-library(shiny)
-library(ggplot2)
+library(shiny) #Loading required package: shiny
+library(ggplot2) #Loading required package: plotly
 library(gplots)
-library(heatmaply)
+library(heatmaply) #Attaching package: ‘heatmaply’
 library(shinyHeatmaply)
 library(bsplus)
 library(htmltools)
 library(shinythemes)
-
+library(RColorBrewer)
 
 #source("census-app/helpers.R")
 #counties <- readRDS("census-app/data/counties.rds")
@@ -127,7 +127,10 @@ ui <- fluidPage(
                            h4("1. Select the genome of interest, hg19 or mm10"),
                            h4("2. Select the current Gene ID type of your data. We will convert it."),
                            h4("3. Upload your file of gene symbols"),
-                           h4("4. Navigate to the other tabs to see visualizations of your data")),
+                           h4("4. Navigate to the other tabs to see visualizations of your data"),
+                           downloadButton("downloadEx", "Download Example File")
+                  
+                           ),
                   tabPanel("Input Genes", 
                            fluidRow(
                              column(1,tableOutput("contents")),
@@ -279,14 +282,22 @@ server <- function(input, output) {
      on.exit(progressHeat$close())
      progressHeat$set(message = "Making interactive heatmap", value = 0)
     
-     mapmat <<- genHeatmap(newgenes(),input$genome) #should return table
+     genesInt <- values$convertedgenes
+     mapmat <- genHeatmap(genesInt(),input$genome) #should return table
      data("mtcars")
      progressHeat$set(message = "Plotting heatmap", value = 0.50)
      cat("nrows mapmat:", nrow(mapmat))
 
      dendint <- values$dendstat
+     #yb<-colorRampPalette(c("blue","white","red"))(100)
+     #hmcol<-brewer.pal(11,"RdBu")
+     
      #heatmaply(mtcars, cexRow = 0.5, cexCol = 0.3,
      heatmaply(mapmat, cexRow = 0.5, cexCol = 0.3,
+               #colors = viridis(n = 256, alpha = 1, begin = 0, end = 1, option = "viridis"), 
+               #colors = cm.colors(256),
+               #colors = hmcol,
+               colors=c("#009999", "#0000FF"), #blue and teal
                hclustfun = function(x) hclust(x, method="ward.D"),
                Colv = rev(dendint),
                seriate = "mean",
@@ -300,7 +311,8 @@ server <- function(input, output) {
      progressHeat <- shiny::Progress$new()
      on.exit(progressHeat$close())
      progressHeat$set(message = "Making heatmap matrix", value = 0)
-     mapmat <<- genHeatmap(newgenes(),input$genome) #should return table
+     genesStat <- values$convertedgenes
+     mapmat <- genHeatmap(genesStat(),input$genome) #should return table
      statobj <- heatmap.2(as.matrix(mapmat), Rowv = T, Colv = T,
                           col = viridis(n = 256, alpha = 1, begin = 0, end = 1, option = "viridis"),
                 trace = "none", labRow = rownames(mapmat),
@@ -338,8 +350,8 @@ server <- function(input, output) {
     if(is.null(input$file1))  
       return(NULL) 
     print("in ind heat")
-    
-    mapmat <<- genHeatmap(newgenes(),input$genome) #should return table
+    genesInd <- values$convertedgenes
+    mapmat <<- genHeatmap(genesInd(),input$genome) #should return table
     data("mtcars")
     #heatmap.2(as.matrix(mtcars), Rowv = T, Colv = T, col = viridis(n = 256, alpha = 1, begin
     heatmap.2(as.matrix(mapmat), Rowv = T, Colv = T, col = viridis(n = 256, alpha = 1, begin
@@ -381,7 +393,9 @@ server <- function(input, output) {
     progressNet <- shiny::Progress$new()
     on.exit(progressNet$close())
     progressNet$set(message = "Making Network-Style Graph", value = 0.50)
-    networks <<- makenetgraph(newgenes(), input$genome, input$decimal)
+    genesNet <- values$convertedgenes
+    networks <- makenetgraph(genesNet(), input$genome, input$decimal)
+    #values$graphobj <- networks
     progressNet$set(message = "Rendering Graph", value = 0.80)
     
     networks[[1]]
@@ -398,7 +412,8 @@ server <- function(input, output) {
     progressCirc <- shiny::Progress$new()
     on.exit(progressCirc$close())
     progressCirc$set(message = "Making Circle-Style Graph", value = 0.50)
-    networks <<- makenetgraph(newgenes(), input$genome, input$decimal)
+    genesCirc <- values$convertedgenes
+    networks <- makenetgraph(genesCirc(), input$genome, input$decimal)
     progressCirc$set(message = "Rendering Graph", value = 0.80)
     networks[[2]]
     #networks[[2]]
@@ -438,7 +453,8 @@ server <- function(input, output) {
     progressSig <- shiny::Progress$new()
     on.exit(progressSig$close())
     progressSig$set(message = "Generating Table of Significant Transcription Factors", value = 0.50)
-    networks <<- makenetgraph(newgenes(), input$genome, input$decimal)
+    genesSig <- values$convertedgenes
+    networks <- makenetgraph(genesSig(), input$genome, input$decimal)
     progressSig$set(message = "Rendering Table", value = 0.80)
     
     networks[[3]]
@@ -484,7 +500,16 @@ server <- function(input, output) {
     }
   )
   
-  
+  output$downloadEx <- downloadHandler(
+    filename = function() {
+      "ex_DE_genes.txt"
+    },
+    content = function(file) {
+      exfile <- read.delim("data/33geneuni.txt", stringsAsFactors=FALSE)
+      write.table(exfile, file, row.names = FALSE, quote = F, sep="\t")
+      
+    }
+  )
 }
 # Run the app ----
 shinyApp(ui, server)

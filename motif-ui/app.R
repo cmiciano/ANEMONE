@@ -84,9 +84,7 @@ ui <- fluidPage(
             )
         ),
       
-      sliderInput("decimal", "Significance Cutoff:",
-                  min = 0, max = 1,
-                  value = 0.05, step = 0.05),
+
       
       # Horizontal line ----
       tags$hr(),
@@ -145,7 +143,9 @@ ui <- fluidPage(
                   #tabPanel("Static Heatmap", plotOutput("statmap", width = "800px", height = "800px"),
                   #         downloadButton("downloadHeat", "Download")),
                   tabPanel("Heatmaps", uiOutput("heattab")),
+                  tabPanel("Motif/Gene Table", uiOutput("mattab")),
                   tabPanel("Network Graph", uiOutput("nettab"))
+                  
                            #          visNetworkOutput("net",  width = "700px", height = "700px"),
                            #          downloadButton("downloadNet", "Download"))
                   # tabPanel("Network Graph", 
@@ -284,6 +284,9 @@ server <- function(input, output) {
     
      genesInt <- values$convertedgenes
      mapmat <- genHeatmap(genesInt(),input$genome) #should return table
+     values$matobj <- mapmat[[1]]
+     targetnum <- mapmat[[1]]
+     values$geneobj <- mapmat[[2]]
      data("mtcars")
      progressHeat$set(message = "Plotting heatmap", value = 0.50)
      cat("nrows mapmat:", nrow(mapmat))
@@ -293,7 +296,7 @@ server <- function(input, output) {
      #hmcol<-brewer.pal(11,"RdBu")
      
      #heatmaply(mtcars, cexRow = 0.5, cexCol = 0.3,
-     heatmaply(mapmat, cexRow = 0.5, cexCol = 0.3,
+     heatmaply(targetnum, cexRow = 0.5, cexCol = 0.3,
                #colors = viridis(n = 256, alpha = 1, begin = 0, end = 1, option = "viridis"), 
                #colors = cm.colors(256),
                #colors = hmcol,
@@ -313,7 +316,8 @@ server <- function(input, output) {
      progressHeat$set(message = "Making heatmap matrix", value = 0)
      genesStat <- values$convertedgenes
      mapmat <- genHeatmap(genesStat(),input$genome) #should return table
-     statobj <- heatmap.2(as.matrix(mapmat), Rowv = T, Colv = T,
+     targetnum <- mapmat[[1]]
+     statobj <- heatmap.2(as.matrix(targetnum), Rowv = T, Colv = T,
                           col = viridis(n = 256, alpha = 1, begin = 0, end = 1, option = "viridis"),
                 trace = "none", labRow = rownames(mapmat),
                 cexRow=0.5,
@@ -329,7 +333,19 @@ server <- function(input, output) {
 
 
 
-   
+   output$mattab <- renderTable({
+     if(is.null(input$file1))  
+       return(NULL) 
+     
+     progressSig <- shiny::Progress$new()
+     on.exit(progressSig$close())
+     progressSig$set(message = "Generating Table of DE genes by Motif", value = 0.50)
+     mattable <- values$geneobj
+     progressSig$set(message = "Rendering Table", value = 0.80)
+     mattable
+     
+
+   })
    
    
    output$heattab <- renderUI({
@@ -352,9 +368,10 @@ server <- function(input, output) {
     print("in ind heat")
     genesInd <- values$convertedgenes
     mapmat <<- genHeatmap(genesInd(),input$genome) #should return table
+    targetnum <- mapmat[[1]]
     data("mtcars")
     #heatmap.2(as.matrix(mtcars), Rowv = T, Colv = T, col = viridis(n = 256, alpha = 1, begin
-    heatmap.2(as.matrix(mapmat), Rowv = T, Colv = T, col = viridis(n = 256, alpha = 1, begin
+    heatmap.2(as.matrix(targetnum), Rowv = T, Colv = T, col = viridis(n = 256, alpha = 1, begin
                                                                             = 0, end = 1, option = "viridis"), 
                 trace = "none", labRow = rownames(mapmat),
               # trace = "none", labRow = rownames(mtcars),
@@ -423,6 +440,45 @@ server <- function(input, output) {
   
   output$nettab <- renderUI({
     tabsetPanel(id = "subTabPanel1", 
+                tabPanel("Get Started",
+                        h1(strong("Transcription Factor-Gene Relationship Visualization Tool")),
+                        h4("The goal of this tool is take your differentially expressed genes of interest
+                           and display a network graph visualizing the transcription factors that are known to 
+                          regulate these genes."),
+                        h4("This visualization is based on TRRUST, a manually curated database of human and 
+                           mouse transcriptional regulatory networks."),
+                        h4("TRRUST can be found here (https://www.grnpedia.org/trrust/)."),
+                        h4("You can subset the nodes you want to display based on the significance cutoff with the
+                           slider below."),
+                        h4("This score determines what particular transcription factors in the database 
+                           interact with your set of genes based on Fisher's exact test"),
+                        h4("Adjusting the slider will regenerate the network graph based on the significance
+                           cutoff you specify."),
+                        h3(strong("Reading the Network Graph")),
+                        h4("The network graph can be visualized in either network-style or circle-style."),
+                        h4("Green Nodes represent the differentially expressed genes that you inputted as
+                           gene IDs in a text file."),
+                        h4("Purple Nodes represent the transcription factors that regulate these genes."),
+                        h4("The arrows represent the mode of regulation a transcription factor has on a particular
+                           gene. Red means that the transcription factor activates the gene, Blue means that
+                           the transcription factor represses the gene. Yellow means that the mode of regulation is 
+                           unknown. Grey means that there are multiple modes of regulation."),
+                        h4("Hovering over transcription factor displays the genes that the transcription factor
+                           regulates and their mode of regulation, the PMIDs describing this relationship in 
+                           literature, the number of genes for which this TF regulates in your particular gene set,
+                           and the significance value of the overlap between the TF and your particular gene set."),
+                        h4("This information is also presented in a table which you can download under the
+                           TF table tab"),
+                        h3(strong("References")),
+                        h4("1. TRRUST v2: an expanded reference database of human and mouse 
+                            transcriptional regulatory interactions. Nucleic Acids Research 26 Oct, 2017
+                          ")
+                        
+                        
+                        
+                        
+                     
+                ),
                 tabPanel("Network-Style", 
                          visNetworkOutput("net",  width = "900px", height = "500px"),
                          downloadButton("downloadNet", "Download")
@@ -438,7 +494,10 @@ server <- function(input, output) {
                          tableOutput("sigTFs"),
                          downloadButton("downloadsigTFs", "Download")
                          
-                )
+                ),
+                sliderInput("decimal", "Significance Cutoff:",
+                            min = 0, max = 1,
+                            value = 0.05, step = 0.05)
     )
     
     

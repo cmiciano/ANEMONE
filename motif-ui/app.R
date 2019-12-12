@@ -1,6 +1,8 @@
 #
 # This is a Shiny web application. You can run the application by clicking
 # the 'Run App' button above.
+Sys.setenv(RSTUDIO_PANDOC="/var/shiny-server/www/demo/pandoc")
+
 source('convertSymbols.R')
 source('subsetgenes.R')
 source('genHeatmap.R')
@@ -93,7 +95,10 @@ ui <- fluidPage(
                 multiple = FALSE,
                 accept = c("text/csv",
                            "text/comma-separated-values,text/plain",
-                           ".csv"))
+                           ".csv")),
+      
+      actionButton("runAnalysesButton","Button 1")
+      
       
       
       
@@ -109,7 +114,7 @@ ui <- fluidPage(
       
       tabsetPanel(type = "tabs",
                   tabPanel("Get Started", 
-                           h2("Welcome to the tool, put your genes of interest in a text file"),
+                           h1(strong("Welcome to the tool")),
                            h4("The goal of this tool is take your differentially expressed genes of interest
                               and cluster these genes based on the motifs that are associated with each of them.
                               Our assumption is that genes that occur near similar motifs will be regulated by
@@ -117,25 +122,32 @@ ui <- fluidPage(
                            h4("In the first tab, we will convert your gene IDs to gene symbols."),
                            h4("Afterwards, we will cluster your genes based on their motifs and output them to
                                a PCA plot and two heatmaps, one that is interactive, and another that is static."),
-                           h4("Finally, we can visualize what transcription factors are regulating these genes
-                              with a network graph."),
+                
                            
-                           
-                           h2("Steps"),
+                           h2(strong("Steps")),
                            h4("1. Select the genome of interest, hg19 or mm10"),
-                           h4("2. Select the current Gene ID type of your data. We will convert it."),
+                           h4("2. Select the current Gene ID type of your data. We will convert them to 
+                              gene symbols."),
                            h4("3. Upload your file of gene symbols"),
                            h4("4. Navigate to the other tabs to see visualizations of your data"),
+                           tags$hr(),
+                           
+                           h4("Below is a text file of gene IDs you can use as input"),
                            downloadButton("downloadEx", "Download Example File")
                   
                            ),
                   tabPanel("Input Genes", 
                            fluidRow(
-                             column(1,tableOutput("contents")),
-                             column(2,offset = 1, tableOutput("changed"), 
-                                    downloadButton("downloadGenes", "Download Converted Genes"))
+                             column(1,
+                                    h4("Inputted"),
+                                    tableOutput("contents"),
+                                    downloadButton("downloadGenes", "Download Converted Genes")),
+                             column(2,offset = 1, 
+                                    h4("Converted"),
+                                    tableOutput("changed"))
                            )
                   ),
+                  tabPanel("Motif/Gene Table", uiOutput("mattab")),
                   tabPanel("PCA", plotOutput("plot"),
                             downloadButton("save", "Download")),
                   #tabPanel("Heatmap", tableOutput("heatmap")),
@@ -143,7 +155,6 @@ ui <- fluidPage(
                   #tabPanel("Static Heatmap", plotOutput("statmap", width = "800px", height = "800px"),
                   #         downloadButton("downloadHeat", "Download")),
                   tabPanel("Heatmaps", uiOutput("heattab")),
-                  tabPanel("Motif/Gene Table", uiOutput("mattab")),
                   tabPanel("Network Graph", uiOutput("nettab"))
                   
                            #          visNetworkOutput("net",  width = "700px", height = "700px"),
@@ -164,45 +175,108 @@ ui <- fluidPage(
 server <- function(input, output) {
   values <- reactiveValues()
   
-
-  output$contents <- renderTable({
-    
-    # input$file1 will be NULL initially. After the user selects
-    # and uploads a file, head of that data file by default,
-    # or all rows if selected, will be shown.
-    req(input$file1)
-    df <- read.delim(input$file1$datapath,
-                   #header = input$header,
-                   sep = input$sep,
-                   quote = input$quote,
-                   stringsAsFactors = F)
-    return(head(df))
-    
-    #if(input$disp == "head") {
-    #  return(head(df))
-    #}
-    #else {
-    #  return(df)
-    #}
-    
+  output$runAnalyses <- renderUI({
+    if(is.null(input$file1))  
+      return(NULL)
+    actionButton("runAnalysesButton", "Run analyses")
   })
   
-
-  output$changed <- renderTable({
-    if(is.null(input$file1))  
-      return(NULL) 
+  data <- observeEvent(input$runAnalysesButton, {
+    # The observeEvent takes no dependency on button 2, even though we refer to the input in the following line.
+    input$button2  
+    showModal(modalDialog(
+      title = "Button pressed",
+      "You pressed one of the buttons!"
+    ))
     
-    newgenes <- reactive(convertGenes(input$file1$datapath, input$genome, input$idtype))
+    ## Print original list
+    #output$contents <- renderTable({
+     
+       # input$file1 will be NULL initially. After the user selects
+       # and uploads a file, head of that data file by default,
+       # or all rows if selected, will be shown.
+       req(input$file1)
+       df <- read.delim(input$file1$datapath,
+                      #header = input$header,
+                      sep = input$sep,
+                      quote = input$quote,
+                      stringsAsFactors = F)
+       #return(head(df))
+       values$origsym <- df
+     
+   #})
+       
+    ## Converted genes   
+    newgenes <- convertGenes(input$file1$datapath, input$genome, input$idtype)
     values$convertedgenes <- newgenes
-    genetab <- head(newgenes())
+       
+    # output$changed <- renderTable({
+    #   if(is.null(input$file1))
+    #     return(NULL)
+    #   
+    #   newgenes <- reactive(convertGenes(input$file1$datapath, input$genome, input$idtype))
+    #   values$convertedgenes <- newgenes
+    #   genetab <- head(newgenes())
+    #   
+    #   validate(
+    #     need(nrow(genetab) > 0, "No genes found, make sure you inputted the correct gene ID type")
+    #   )
+    #   genetab
+    #   
+    #   #return(head(newgenes()))
+    # })
     
-    validate(
-      need(nrow(genetab) > 0, "No genes found, make sure you inputted the correct gene ID type")
-    )
-    genetab
-      
-    #return(head(newgenes()))
-  })
+    
+    ## Convert to gene matrix (targetmatnum)
+    genesInt <- values$convertedgenes
+    mapmat <- genHeatmap(genesInt,input$genome) #should return table
+    values$matobj <- mapmat[[1]]
+    values$geneobj <- mapmat[[2]]
+
+    
+
+    
+  }) ##observe event bracket
+  
+
+   output$contents <- renderTable({
+  
+     # input$file1 will be NULL initially. After the user selects
+     # and uploads a file, head of that data file by default,
+     # or all rows if selected, will be shown.
+     #req(values$origsym)
+     origcont <- values$origsym
+     head(origcont)
+     
+  #   req(input$file1)
+  #   df <- read.delim(input$file1$datapath,
+  #                  #header = input$header,
+  #                  sep = input$sep,
+  #                  quote = input$quote,
+  #                  stringsAsFactors = F)
+  #   return(head(df))
+  #
+   })
+
+
+   output$changed <- renderTable({
+     if(is.null(input$file1))
+       return(NULL)
+     newout <- values$convertedgenes
+     head(newout)
+     
+  # 
+  #   newgenes <- reactive(convertGenes(input$file1$datapath, input$genome, input$idtype))
+  #   values$convertedgenes <- newgenes
+  #   genetab <- head(newgenes())
+  # 
+  #   validate(
+  #     need(nrow(genetab) > 0, "No genes found, make sure you inputted the correct gene ID type")
+  #   )
+  #   genetab
+  # 
+  #   #return(head(newgenes()))
+   })
   
   output$downloadGenes <- downloadHandler(
     filename = function() {
@@ -218,6 +292,24 @@ server <- function(input, output) {
     paste("You chose", input$genome)
   })
   
+  output$mattab <- renderTable({
+    if(is.null(input$file1))
+      return(NULL)
+
+    progressSig <- shiny::Progress$new()
+    on.exit(progressSig$close())
+    progressSig$set(message = "Generating Table of DE genes by Motif", value = 0.50)
+    #genesInt <- values$convertedgenes
+    #mapmat <- genHeatmap(genesInt(),input$genome) #should return table
+    #values$matobj <- mapmat[[1]]
+    #values$geneobj <- mapmat[[2]]
+    mattable <- values$geneobj
+    progressSig$set(message = "Rendering Table", value = 0.80)
+    
+    mattable
+
+
+  })
   
 
   
@@ -230,8 +322,13 @@ server <- function(input, output) {
     on.exit(progressPCA$close())
     progressPCA$set(message = "Making PCA plot", value = 0)
     progressPCA$set(message = "Generating expression matrix", value = 0.50)
-    
     genesPCA <- values$convertedgenes
+    #validate(
+    #  need(nrow(genesPCA) > 0, 'Check that genes is not empty')
+    #)
+    #validate(
+    #  need(nrow(genetab) > 0, "No genes found, make sure you inputted the correct gene ID type")
+    #)
     pcaList <- generatePCA(genesPCA(),input$genome)
     
     pcaDF <- pcaList[[1]]
@@ -283,13 +380,12 @@ server <- function(input, output) {
      progressHeat$set(message = "Making interactive heatmap", value = 0)
     
      genesInt <- values$convertedgenes
-     mapmat <- genHeatmap(genesInt(),input$genome) #should return table
-     values$matobj <- mapmat[[1]]
-     targetnum <- mapmat[[1]]
-     values$geneobj <- mapmat[[2]]
-     data("mtcars")
+     #mapmat <- genHeatmap(genesInt(),input$genome) #should return table
+     #values$matobj <- mapmat[[1]]
+     targetnum <- values$matobj 
+     #data("mtcars")
      progressHeat$set(message = "Plotting heatmap", value = 0.50)
-     cat("nrows mapmat:", nrow(mapmat))
+     #cat("nrows mapmat:", nrow(mapmat))
 
      dendint <- values$dendstat
      #yb<-colorRampPalette(c("blue","white","red"))(100)
@@ -315,11 +411,12 @@ server <- function(input, output) {
      on.exit(progressHeat$close())
      progressHeat$set(message = "Making heatmap matrix", value = 0)
      genesStat <- values$convertedgenes
-     mapmat <- genHeatmap(genesStat(),input$genome) #should return table
-     targetnum <- mapmat[[1]]
+     #mapmat <- genHeatmap(genesStat(),input$genome) #should return table
+     targetnum <- values$matobj 
      statobj <- heatmap.2(as.matrix(targetnum), Rowv = T, Colv = T,
                           col = viridis(n = 256, alpha = 1, begin = 0, end = 1, option = "viridis"),
-                trace = "none", labRow = rownames(mapmat),
+                trace = "none", #labRow = rownames(mapmat), 
+                labRow = rownames(targetnum),
                 cexRow=0.5,
                 cexCol=0.3,
                 hclustfun=function(x) hclust(x, method="ward.D")
@@ -333,19 +430,6 @@ server <- function(input, output) {
 
 
 
-   output$mattab <- renderTable({
-     if(is.null(input$file1))  
-       return(NULL) 
-     
-     progressSig <- shiny::Progress$new()
-     on.exit(progressSig$close())
-     progressSig$set(message = "Generating Table of DE genes by Motif", value = 0.50)
-     mattable <- values$geneobj
-     progressSig$set(message = "Rendering Table", value = 0.80)
-     mattable
-     
-
-   })
    
    
    output$heattab <- renderUI({
@@ -355,7 +439,9 @@ server <- function(input, output) {
                           downloadButton("downloadHeat", "Download")
                  ),
                  tabPanel("Interactive Heatmap", 
-                          tabPanel("Heatmap", plotlyOutput("heatmap", width = "800px", height = "600px" ))
+                          tabPanel("Heatmap", plotlyOutput("heatmap", width = "800px", height = "600px" )),
+                          downloadButton("downloadHeatmaply", "Download")
+                          
                  )
              
      )
@@ -367,7 +453,7 @@ server <- function(input, output) {
       return(NULL) 
     print("in ind heat")
     genesInd <- values$convertedgenes
-    mapmat <<- genHeatmap(genesInd(),input$genome) #should return table
+    mapmat <- genHeatmap(genesInd(),input$genome) #should return table
     targetnum <- mapmat[[1]]
     data("mtcars")
     #heatmap.2(as.matrix(mtcars), Rowv = T, Colv = T, col = viridis(n = 256, alpha = 1, begin
@@ -387,6 +473,31 @@ server <- function(input, output) {
     cat("Heatmap finished!\n")
   })
   
+  
+  indHeatmaply <- reactive({
+    if(is.null(input$file1))  
+      return(NULL) 
+    print("in ind heat")
+    indmap <- values$matobj
+    
+    data("mtcars")
+    #heatmap.2(as.matrix(mtcars), Rowv = T, Colv = T, col = viridis(n = 256, alpha = 1, begin
+    heatmaply(indmap, cexRow = 0.5, cexCol = 0.3,
+              #colors = viridis(n = 256, alpha = 1, begin = 0, end = 1, option = "viridis"), 
+              #colors = cm.colors(256),
+              #colors = hmcol,
+              colors=c("#009999", "#0000FF"), #blue and teal
+              hclustfun = function(x) hclust(x, method="ward.D"),
+              Colv = rev(dendint),
+              seriate = "mean",
+              row_dend_left = TRUE, 
+              plot_method = "plotly",
+              file = "heatmaply_plot.html"
+              )
+    
+    #invisible(dev.off())
+    cat("Heatmap finished!\n")
+  })
   output$downloadHeat <- ({
     downloadHandler(
       filename = function() { 'heatmap.pdf' },
@@ -402,8 +513,44 @@ server <- function(input, output) {
       
       })
   })
+  
+  output$downloadHeatmaply <- ({
+    downloadHandler(
+      filename = function() { 'heatmaply.html' },
+      content = function(outfile) {
+        #req(indHeat())
+        #png(file, width=1200, height=1200,res=300, pointsize=8)
+        #pdf(file)
+        #par(mar=c(10,2,2,3), cex=1.0)
+        cat("setup heatmaply")
+        maplyout <- values$matobj
+        #indHeatmaply()
+        dendint <- values$dendstat
+        #dir.create("folder")
+        #data("mtcars")
+        tmp <- heatmaply(maplyout, cexRow = 0.5, cexCol = 0.3,
+                   #colors = viridis(n = 256, alpha = 1, begin = 0, end = 1, option = "viridis"), 
+                   #colors = cm.colors(256),
+                   #colors = hmcol,
+                   colors=c("#009999", "#0000FF"), #blue and teal
+                   hclustfun = function(x) hclust(x, method="ward.D"),
+                   Colv = rev(dendint),
+                   seriate = "mean",
+                   row_dend_left = TRUE, 
+                   plot_method = "plotly",
+                   file = outfile
+        )
+        #tmp
+
+        #browseURL("folder/heatmaply_plot.html")
+        cat("Finished in download")
+        while (!is.null(dev.list()))  dev.off()
+        
+      })
+  })
 
   #values$fdroutput <- 
+  
   
   output$net  <- renderVisNetwork({
     
@@ -411,7 +558,7 @@ server <- function(input, output) {
     on.exit(progressNet$close())
     progressNet$set(message = "Making Network-Style Graph", value = 0.50)
     genesNet <- values$convertedgenes
-    networks <- makenetgraph(genesNet(), input$genome, input$decimal)
+    networks <- makenetgraph(genesNet, input$genome, input$decimal)
     #values$graphobj <- networks
     progressNet$set(message = "Rendering Graph", value = 0.80)
     
@@ -430,7 +577,7 @@ server <- function(input, output) {
     on.exit(progressCirc$close())
     progressCirc$set(message = "Making Circle-Style Graph", value = 0.50)
     genesCirc <- values$convertedgenes
-    networks <- makenetgraph(genesCirc(), input$genome, input$decimal)
+    networks <- makenetgraph(genesCirc, input$genome, input$decimal)
     progressCirc$set(message = "Rendering Graph", value = 0.80)
     networks[[2]]
     #networks[[2]]
@@ -441,7 +588,7 @@ server <- function(input, output) {
   output$nettab <- renderUI({
     tabsetPanel(id = "subTabPanel1", 
                 tabPanel("Get Started",
-                        h1(strong("Transcription Factor-Gene Relationship Visualization Tool")),
+                        h1(strong("TF-Gene Relationship Visualization Tool")),
                         h4("The goal of this tool is take your differentially expressed genes of interest
                            and display a network graph visualizing the transcription factors that are known to 
                           regulate these genes."),

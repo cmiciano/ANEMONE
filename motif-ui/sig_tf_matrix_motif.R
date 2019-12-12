@@ -272,14 +272,23 @@ makenetgraph<-function(genes, dbinput, fdroutput) {
   
   
   h <- graph.data.frame(sigrelation2, directed = TRUE, vertices = sigallvertdata)
-  
-  
+  #Activates
+  #Represses
+  #Unknown
+  #Multiple
+  legendnodes <- data.frame(label = c("TF", "Gene"),
+                       shape = c("ellipse"),
+                       color = c(green, purple))
+  legendedges <- data.frame(label = c("Activates", "Represses", "Unknown", "Multiple"),
+                            shape = c("ellipse"),
+                            color = c(red, blue, orange, black))
   datavo <- toVisNetworkData(h)
   ### Creates network graph ####
   graph <- visNetwork(nodes = datavo$nodes, edges = datavo$edges, height = "700px", width = "100%") %>%
     visOptions(highlightNearest = list(enabled = T, degree = 1, hover = T)) %>%
     visInteraction(keyboard = TRUE, tooltipDelay = 0, tooltipStay = 10000) %>%
-    visLayout(randomSeed = 18) 
+    visLayout(randomSeed = 18) %>%
+    visLegend(addNodes = legendnodes, addEdges = legendedges, useGroups = F)
   
   
   graph
@@ -292,11 +301,12 @@ makenetgraph<-function(genes, dbinput, fdroutput) {
   graph %>% visSave(file = "net.html")
   
   #Creates circle graph
-  circgraph <- visNetwork(nodes = datavo$nodes, edges = datavo$edges, height = "700px", width = "100%") %>%
+  circgraph <- visNetwork(nodes = datavo$nodes, edges = datavo$edges, main = "A really simple example", height = "700px", width = "100%") %>%
     visOptions(highlightNearest = list(enabled = T, degree = 1, hover = T)) %>%
     visInteraction(keyboard = TRUE, tooltipDelay = 0, tooltipStay = 5000) %>%
     visIgraphLayout(layout = "layout_in_circle") %>%
-    visLayout(randomSeed = 321)
+    visLayout(randomSeed = 321) %>%
+    visLegend(addNodes = legendnodes, addEdges = legendedges, useGroups = F)
   circgraph
   cat("Saving circle graph...\n")
   

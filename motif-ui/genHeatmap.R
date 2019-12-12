@@ -7,7 +7,7 @@ genHeatmap <- function(infile_name,genome) {
   #inputgenes <-read.delim("inputgenes.txt", stringsAsFactors = F, header = F)
   #inputvec <- readLines("../inputgenes.txt")
   #inputgenes <- read.delim("~/Documents/Salk/TFMatrix/33geneuni.txt", header = F)
-  inputgenes <- read.delim("~/Documents/Salk/TFMatrix/ex_tfgenes.txt", header = F)
+  #inputgenes <- read.delim("~/Documents/Salk/TFMatrix/ex_tfgenes.txt", header = F)
   
   #inputgenes <-read.delim("../inputgenes.txt", stringsAsFactors = F, header = F) #works
   inputgenes <- infile_name

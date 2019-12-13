@@ -188,7 +188,9 @@ server <- function(input, output) {
       title = "Button pressed",
       "You pressed one of the buttons!"
     ))
-    
+    progressSig <- shiny::Progress$new()
+    on.exit(progressSig$close())
+    progressSig$set(message = "Reading in genes...", value = 0.10)
     ## Print original list
     #output$contents <- renderTable({
      
@@ -205,6 +207,7 @@ server <- function(input, output) {
        values$origsym <- df
      
    #})
+    progressSig$set(message = "Converting genes...", value = 0.20)
        
     ## Converted genes   
     newgenes <- convertGenes(input$file1$datapath, input$genome, input$idtype)
@@ -227,13 +230,30 @@ server <- function(input, output) {
     # })
     
     
+    progressSig$set(message = "Converting gene IDs to gene matrix", value = 0.30)
+    
     ## Convert to gene matrix (targetmatnum)
     genesInt <- values$convertedgenes
     mapmat <- genHeatmap(genesInt,input$genome) #should return table
     values$matobj <- mapmat[[1]]
     values$geneobj <- mapmat[[2]]
-
     
+    
+    progressSig$set(message = "Generating static heatmap", value = 0.40)
+    
+    
+    ##Generate static heatmap
+    
+    
+    ##Generate PCA
+    progressSig$set(message = "Generating PCA", value = 0.50)
+    genesPCA <- values$convertedgenes
+    pcaList <- generatePCA(genesPCA,input$genome)
+    values$pca <- pcaList
+    
+
+    #Gen graph
+    genGraph()
 
     
   }) ##observe event bracket
@@ -329,11 +349,12 @@ server <- function(input, output) {
     #validate(
     #  need(nrow(genetab) > 0, "No genes found, make sure you inputted the correct gene ID type")
     #)
-    pcaList <- generatePCA(genesPCA(),input$genome)
+    #pcaList <- generatePCA(genesPCA,input$genome)
     
-    pcaDF <- pcaList[[1]]
-    pc1var <- pcaList[[2]]
-    pc2var <- pcaList[[3]]    
+    pcaOut <- values$pca
+    pcaDF <- pcaOut[[1]]
+    pc1var <- pcaOut[[2]]
+    pc2var <- pcaOut[[3]]    
     
     progressPCA$set(message = "Returning plot output", value = 0.9)
     
@@ -412,10 +433,11 @@ server <- function(input, output) {
      progressHeat$set(message = "Making heatmap matrix", value = 0)
      genesStat <- values$convertedgenes
      #mapmat <- genHeatmap(genesStat(),input$genome) #should return table
-     targetnum <- values$matobj 
+     targetnum <- values$matobj
+     #statout <- values$stat
      statobj <- heatmap.2(as.matrix(targetnum), Rowv = T, Colv = T,
                           col = viridis(n = 256, alpha = 1, begin = 0, end = 1, option = "viridis"),
-                trace = "none", #labRow = rownames(mapmat), 
+                trace = "none", #labRow = rownames(mapmat),
                 labRow = rownames(targetnum),
                 cexRow=0.5,
                 cexCol=0.3,
@@ -552,20 +574,47 @@ server <- function(input, output) {
   #values$fdroutput <- 
   
   
-  output$net  <- renderVisNetwork({
+  genGraph <- reactive({
+    cat("in gen graph")
+    genesNet <- values$convertedgenes
     
+    if (is.null(input$decimal)) {
+      cat("null cond")
+      nets <- makenetgraph(genesNet, input$genome, 0.05)
+      firstcall <- TRUE
+      values$call <- firstcall
+    }
+    else {
+      cat("else cond")
+      cat("value of input$decimal", input$decimal ,"\n")
+      nets <- makenetgraph(genesNet, input$genome, input$decimal)
+      
+    }
+    values$netsobj <- nets[[1]]
+    values$circsobj <- nets[[2]]
+    values$sigsTF <- nets[[3]]
+  })
+  
+  output$net  <- renderVisNetwork({
+    if (is.numeric(input$decimal)){
+    #if (input$decimal != 0.05){
+      req(genGraph())
+    }
     progressNet <- shiny::Progress$new()
     on.exit(progressNet$close())
     progressNet$set(message = "Making Network-Style Graph", value = 0.50)
     genesNet <- values$convertedgenes
-    networks <- makenetgraph(genesNet, input$genome, input$decimal)
+    #networks <- makenetgraph(genesNet, input$genome, input$decimal)
     #values$graphobj <- networks
     progressNet$set(message = "Rendering Graph", value = 0.80)
     
-    networks[[1]]
+    #networks[[1]]
     #networks[[2]]
     
-    values$netobj <- networks[[1]]
+    #values$netobj <- networks[[1]]
+    
+    netout <- values$netsobj
+    netout
     
     #validate(
     #  need(nrow(networks[[3]]) > 0, "No DE genes based on parameters for fdrout try changing parameters")
@@ -573,15 +622,21 @@ server <- function(input, output) {
   }) # created input$mynetwork_selected
   
   output$circ  <- renderVisNetwork({
+    if (input$decimal != 0.05){
+      req(genGraph())
+    }
     progressCirc <- shiny::Progress$new()
     on.exit(progressCirc$close())
     progressCirc$set(message = "Making Circle-Style Graph", value = 0.50)
     genesCirc <- values$convertedgenes
-    networks <- makenetgraph(genesCirc, input$genome, input$decimal)
+    #networks <- makenetgraph(genesCirc, input$genome, input$decimal)
     progressCirc$set(message = "Rendering Graph", value = 0.80)
-    networks[[2]]
     #networks[[2]]
-    values$circobj <- networks[[2]]
+    #networks[[2]]
+    #values$circobj <- networks[[2]]
+    circout <- values$circsobj
+    circout
+    
     
   }) 
   
@@ -653,6 +708,10 @@ server <- function(input, output) {
   })
   
   output$sigTFs <- renderTable({
+    if (input$decimal != 0.05){
+      req(genGraph())
+    }
+    
     if(is.null(input$file1))  
       return(NULL) 
     
@@ -660,11 +719,15 @@ server <- function(input, output) {
     on.exit(progressSig$close())
     progressSig$set(message = "Generating Table of Significant Transcription Factors", value = 0.50)
     genesSig <- values$convertedgenes
-    networks <- makenetgraph(genesSig(), input$genome, input$decimal)
+    #networks <- makenetgraph(genesSig, input$genome, input$decimal)
     progressSig$set(message = "Rendering Table", value = 0.80)
     
-    networks[[3]]
-    values$sigTFobj <- networks[[3]]
+    #networks[[3]]
+    #values$sigTFobj <- networks[[3]]
+    
+    #values$sigTFobj <- networks[[3]]
+    sigout <- values$sigsTF
+    sigout
    
   })
  # created input$mynetwork_selected

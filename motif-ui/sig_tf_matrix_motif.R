@@ -1,7 +1,7 @@
 ##!/usr/bin/env Rscript
 
 ###############
-#Makes a graph of nodes of TFs (in red) and Target genes (in blue) from DE genes
+#Makes a graph of nodes of TFs (in red) and Target genes (in blue) from DE genes 
 #######
 suppressMessages(library(GeneOverlap))
 suppressMessages(library(visNetwork))

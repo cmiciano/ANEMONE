@@ -7,18 +7,15 @@ source('convertSymbols.R')
 source('subsetgenes.R')
 source('genHeatmap.R')
 source('sig_tf_matrix_motif.R')
-library(shiny) #Loading required package: shiny
-library(ggplot2) #Loading required package: plotly
+library(shiny) 
+library(ggplot2) 
 library(gplots)
-library(heatmaply) #Attaching package: ‘heatmaply’
+library(heatmaply)
 library(shinyHeatmaply)
 library(bsplus)
 library(htmltools)
 library(shinythemes)
 library(RColorBrewer)
-
-#source("census-app/helpers.R")
-#counties <- readRDS("census-app/data/counties.rds")
 
 # Define UI for data upload app ----
 ui <- fluidPage(
@@ -58,13 +55,6 @@ ui <- fluidPage(
       # Horizontal line ----
       tags$hr(),
       
-      # Input: Select number of rows to display ----
-      #radioButtons("disp", "Specify whether to display head of converted genes or all converted genes",
-      #radioButtons("disp", "Display Head/All",
-      #             choices = c(Head = "head",
-      #                         All = "all"),
-      #             selected = "head"),
-      
       
       selectInput("genome", "Select Genome:",
                   c("hg19","mm10"))
@@ -72,7 +62,7 @@ ui <- fluidPage(
         shinyInput_label_embed(
           shiny_iconlink() %>%
             bs_embed_popover(
-              title = "Select what genome your genes belong to", content = "Choose a favorite", placement = "left"
+              title = "Select what genome your genes belong to", placement = "left"
             )
         ),
       
@@ -82,7 +72,7 @@ ui <- fluidPage(
         shinyInput_label_embed(
           shiny_iconlink() %>%
             bs_embed_popover(
-              title = "Select what Gene ID type your genes are written as", content = "Choose a favorite", placement = "left"
+              title = "Select what Gene ID type your genes are written as", placement = "left"
             )
         ),
       
@@ -142,7 +132,7 @@ ui <- fluidPage(
                                     tableOutput("changed"))
                            )
                   ),
-                  tabPanel("Motif/Gene Table", uiOutput("mattab")),
+                  tabPanel("Motif/Gene Table", uiOutput("mattab"), downloadButton("downloadTab", "Download")),
                   tabPanel("PCA", plotOutput("plot"),
                             downloadButton("save", "Download")),
                   tabPanel("Heatmaps", uiOutput("heattab")),
@@ -194,7 +184,10 @@ server <- function(input, output) {
     ##Generate PCA
     progressSig$set(message = "Generating PCA", value = 0.50)
     genesPCA <- values$convertedgenes
-    pcaList <- generatePCA(genesPCA,input$genome)
+    matPCA<- values$matobj
+    pcaList <- generatePCA(matPCA, input$genome)
+    
+    #pcaList <- generatePCA(genesPCA,input$genome)
     values$pca <- pcaList
     
 
@@ -243,7 +236,7 @@ server <- function(input, output) {
     },
     content = function(file) {
       finalgenes <- values$convertedgenes
-      write.table(finalgenes(), file, row.names = FALSE, quote = F, sep="\t")
+      write.table(finalgenes, file, row.names = FALSE, col.names = F, quote = F, sep="\t")
     }
   )
   
@@ -261,6 +254,19 @@ server <- function(input, output) {
 
   })
   
+  output$downloadTab <- downloadHandler(
+    filename = function() {
+      "genesByMotif.txt"
+    },
+    content = function(file) {
+      finaltable <- values$geneobj
+      write.table(finaltable, file, row.names = FALSE, col.names = T, quote = F, sep="\t")
+    }
+  )
+  
+  output$geneout <- renderText({
+    paste("You chose", input$genome)
+  })
 
   
   individualGraph <- reactive({
@@ -374,13 +380,13 @@ server <- function(input, output) {
       return(NULL) 
     print("in ind heat")
     genesInd <- values$convertedgenes
-    mapmat <- genHeatmap(genesInd(),input$genome) #should return table
-    targetnum <- mapmat[[1]]
+    #mapmat <- genHeatmap(genesInd,input$genome) #should return table
+    targetnum <- values$matobj
     data("mtcars")
     #heatmap.2(as.matrix(mtcars), Rowv = T, Colv = T, col = viridis(n = 256, alpha = 1, begin
     heatmap.2(as.matrix(targetnum), Rowv = T, Colv = T, col = viridis(n = 256, alpha = 1, begin
                                                                             = 0, end = 1, option = "viridis"), 
-                trace = "none", labRow = rownames(mapmat),
+                trace = "none", labRow = rownames(targetnum),
               # trace = "none", labRow = rownames(mtcars),
     
               #lhei = c(0.5,5),     
@@ -442,10 +448,10 @@ server <- function(input, output) {
         maplyout <- values$matobj
         dendint <- values$dendstat
         tmp <- heatmaply(maplyout, cexRow = 0.5, cexCol = 0.3,
-                   #colors = viridis(n = 256, alpha = 1, begin = 0, end = 1, option = "viridis"), 
+                   colors = viridis(n = 256, alpha = 1, begin = 0, end = 1, option = "viridis"), 
                    #colors = cm.colors(256),
                    #colors = hmcol,
-                   colors=c("#009999", "#0000FF"), #blue and teal
+                   #colors=c("#009999", "#0000FF"), #blue and teal
                    hclustfun = function(x) hclust(x, method="ward.D"),
                    Colv = rev(dendint),
                    seriate = "mean",
@@ -466,9 +472,9 @@ server <- function(input, output) {
     nets <- makenetgraph(genesNet, input$genome, input$decimal)
       
     
-    values$netsobj <- nets[[1]]
-    values$circsobj <- nets[[2]]
-    values$sigsTF <- nets[[3]]
+    values$netobj <- nets[[1]]
+    values$circobj <- nets[[2]]
+    values$sigTFobj <- nets[[3]]
   })
   
   ##Initialize Graph
@@ -502,13 +508,13 @@ server <- function(input, output) {
   
   
   output$net  <- renderVisNetwork({
-    netout <- values$netsobj
+    netout <- values$netobj
     netout
     
   }) 
   
   output$circ  <- renderVisNetwork({
-    circout <- values$circsobj
+    circout <- values$circobj
     circout
     
     
@@ -517,7 +523,7 @@ server <- function(input, output) {
   output$sigTFs <- renderTable({
     if(is.null(input$file1))  
       return(NULL) 
-    sigout <- values$sigsTF
+    sigout <- values$sigTFobj
     sigout
     
   })
@@ -596,6 +602,7 @@ server <- function(input, output) {
       filename = function() { 'network.html' },
       content = function(file) {
         cat("setup net")
+ 
         finalnet <- values$netobj
         visSave(finalnet, file)
         cat("Finished in download net")

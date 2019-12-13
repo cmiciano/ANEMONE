@@ -97,7 +97,7 @@ ui <- fluidPage(
                            "text/comma-separated-values,text/plain",
                            ".csv")),
       
-      actionButton("runAnalysesButton","Button 1")
+      actionButton("runAnalysesButton","Run Analyses")
       
       
       
@@ -106,11 +106,6 @@ ui <- fluidPage(
     
     # Main panel for displaying outputs ----
     mainPanel(
-      
-      # Output: Data file ----
-      #textOutput("geneout"), #You chose
-      #tableOutput("contents"),
-     
       
       tabsetPanel(type = "tabs",
                   tabPanel("Get Started", 
@@ -150,20 +145,8 @@ ui <- fluidPage(
                   tabPanel("Motif/Gene Table", uiOutput("mattab")),
                   tabPanel("PCA", plotOutput("plot"),
                             downloadButton("save", "Download")),
-                  #tabPanel("Heatmap", tableOutput("heatmap")),
-                  #tabPanel("Heatmap", plotlyOutput("heatmap", width = "800px", height = "800px" )),
-                  #tabPanel("Static Heatmap", plotOutput("statmap", width = "800px", height = "800px"),
-                  #         downloadButton("downloadHeat", "Download")),
                   tabPanel("Heatmaps", uiOutput("heattab")),
                   tabPanel("Network Graph", uiOutput("nettab"))
-                  
-                           #          visNetworkOutput("net",  width = "700px", height = "700px"),
-                           #          downloadButton("downloadNet", "Download"))
-                  # tabPanel("Network Graph", 
-                  #          visNetworkOutput("net",  width = "700px", height = "700px"),
-                  #          downloadButton("downloadNet", "Download")),
-                  # tabPanel("Network Graph", 
-                  #          visNetworkOutput("circ",  width = "700px", height = "700px"))
 
       )
     )
@@ -182,54 +165,23 @@ server <- function(input, output) {
   })
   
   data <- observeEvent(input$runAnalysesButton, {
-    # The observeEvent takes no dependency on button 2, even though we refer to the input in the following line.
     input$button2  
-    showModal(modalDialog(
-      title = "Button pressed",
-      "You pressed one of the buttons!"
-    ))
     progressSig <- shiny::Progress$new()
     on.exit(progressSig$close())
     progressSig$set(message = "Reading in genes...", value = 0.10)
-    ## Print original list
-    #output$contents <- renderTable({
-     
-       # input$file1 will be NULL initially. After the user selects
-       # and uploads a file, head of that data file by default,
-       # or all rows if selected, will be shown.
-       req(input$file1)
-       df <- read.delim(input$file1$datapath,
-                      #header = input$header,
-                      sep = input$sep,
-                      quote = input$quote,
-                      stringsAsFactors = F)
-       #return(head(df))
-       values$origsym <- df
-     
-   #})
+       #req(input$file1)
+       # df <- read.delim(input$file1$datapath,
+       #                sep = input$sep,
+       #                quote = input$quote,
+       #                stringsAsFactors = F)
+       # values$origsym <- df
+       # 
     progressSig$set(message = "Converting genes...", value = 0.20)
        
     ## Converted genes   
     newgenes <- convertGenes(input$file1$datapath, input$genome, input$idtype)
     values$convertedgenes <- newgenes
        
-    # output$changed <- renderTable({
-    #   if(is.null(input$file1))
-    #     return(NULL)
-    #   
-    #   newgenes <- reactive(convertGenes(input$file1$datapath, input$genome, input$idtype))
-    #   values$convertedgenes <- newgenes
-    #   genetab <- head(newgenes())
-    #   
-    #   validate(
-    #     need(nrow(genetab) > 0, "No genes found, make sure you inputted the correct gene ID type")
-    #   )
-    #   genetab
-    #   
-    #   #return(head(newgenes()))
-    # })
-    
-    
     progressSig$set(message = "Converting gene IDs to gene matrix", value = 0.30)
     
     ## Convert to gene matrix (targetmatnum)
@@ -237,12 +189,6 @@ server <- function(input, output) {
     mapmat <- genHeatmap(genesInt,input$genome) #should return table
     values$matobj <- mapmat[[1]]
     values$geneobj <- mapmat[[2]]
-    
-    
-    progressSig$set(message = "Generating static heatmap", value = 0.40)
-    
-    
-    ##Generate static heatmap
     
     
     ##Generate PCA
@@ -260,42 +206,35 @@ server <- function(input, output) {
   
 
    output$contents <- renderTable({
-  
+     req(input$file1)
+     df <- read.delim(input$file1$datapath,
+                      sep = input$sep,
+                      quote = input$quote,
+                      stringsAsFactors = F)
+     values$origsym <- df
+     
      # input$file1 will be NULL initially. After the user selects
      # and uploads a file, head of that data file by default,
      # or all rows if selected, will be shown.
-     #req(values$origsym)
+    
      origcont <- values$origsym
      head(origcont)
-     
-  #   req(input$file1)
-  #   df <- read.delim(input$file1$datapath,
-  #                  #header = input$header,
-  #                  sep = input$sep,
-  #                  quote = input$quote,
-  #                  stringsAsFactors = F)
-  #   return(head(df))
-  #
    })
 
 
    output$changed <- renderTable({
      if(is.null(input$file1))
        return(NULL)
+     newgenes <- convertGenes(input$file1$datapath, input$genome, input$idtype)
+     values$convertedgenes <- newgenes
      newout <- values$convertedgenes
+     
+     validate(
+       need(nrow(newout) > 0, "No genes found, make sure you inputted the correct gene ID type")
+     )
      head(newout)
      
-  # 
-  #   newgenes <- reactive(convertGenes(input$file1$datapath, input$genome, input$idtype))
-  #   values$convertedgenes <- newgenes
-  #   genetab <- head(newgenes())
-  # 
-  #   validate(
-  #     need(nrow(genetab) > 0, "No genes found, make sure you inputted the correct gene ID type")
-  #   )
-  #   genetab
-  # 
-  #   #return(head(newgenes()))
+
    })
   
   output$downloadGenes <- downloadHandler(
@@ -315,19 +254,10 @@ server <- function(input, output) {
   output$mattab <- renderTable({
     if(is.null(input$file1))
       return(NULL)
-
-    progressSig <- shiny::Progress$new()
-    on.exit(progressSig$close())
-    progressSig$set(message = "Generating Table of DE genes by Motif", value = 0.50)
-    #genesInt <- values$convertedgenes
-    #mapmat <- genHeatmap(genesInt(),input$genome) #should return table
-    #values$matobj <- mapmat[[1]]
-    #values$geneobj <- mapmat[[2]]
+   
     mattable <- values$geneobj
-    progressSig$set(message = "Rendering Table", value = 0.80)
-    
-    mattable
-
+    #head(mattable)
+    mattable[1:20,1:8]
 
   })
   
@@ -336,31 +266,12 @@ server <- function(input, output) {
   individualGraph <- reactive({
     if(is.null(input$file1))  
       return(NULL) 
-    #newgenes <- convertGenes(input$file1$datapath, input$genome, input$idtype)
-    # pcaDF <- generatePCA(input$file1$datapath)
-    progressPCA <- shiny::Progress$new()
-    on.exit(progressPCA$close())
-    progressPCA$set(message = "Making PCA plot", value = 0)
-    progressPCA$set(message = "Generating expression matrix", value = 0.50)
-    genesPCA <- values$convertedgenes
-    #validate(
-    #  need(nrow(genesPCA) > 0, 'Check that genes is not empty')
-    #)
-    #validate(
-    #  need(nrow(genetab) > 0, "No genes found, make sure you inputted the correct gene ID type")
-    #)
-    #pcaList <- generatePCA(genesPCA,input$genome)
-    
     pcaOut <- values$pca
     pcaDF <- pcaOut[[1]]
     pc1var <- pcaOut[[2]]
     pc2var <- pcaOut[[3]]    
-    
-    progressPCA$set(message = "Returning plot output", value = 0.9)
-    
-    #ggplot(pcaDF)
     groupnum <- rownames(pcaDF)
-    ## new plot with 150
+
     xmax <- round(max(pcaDF$PC1))+1
     xmin <- round(min(pcaDF$PC1))-1
     
@@ -399,14 +310,9 @@ server <- function(input, output) {
      progressHeat <- shiny::Progress$new()
      on.exit(progressHeat$close())
      progressHeat$set(message = "Making interactive heatmap", value = 0)
-    
-     genesInt <- values$convertedgenes
-     #mapmat <- genHeatmap(genesInt(),input$genome) #should return table
-     #values$matobj <- mapmat[[1]]
+  
      targetnum <- values$matobj 
-     #data("mtcars")
      progressHeat$set(message = "Plotting heatmap", value = 0.50)
-     #cat("nrows mapmat:", nrow(mapmat))
 
      dendint <- values$dendstat
      #yb<-colorRampPalette(c("blue","white","red"))(100)
@@ -414,10 +320,10 @@ server <- function(input, output) {
      
      #heatmaply(mtcars, cexRow = 0.5, cexCol = 0.3,
      heatmaply(targetnum, cexRow = 0.5, cexCol = 0.3,
-               #colors = viridis(n = 256, alpha = 1, begin = 0, end = 1, option = "viridis"), 
+               colors = viridis(n = 256, alpha = 1, begin = 0, end = 1, option = "viridis"), 
                #colors = cm.colors(256),
                #colors = hmcol,
-               colors=c("#009999", "#0000FF"), #blue and teal
+               #colors=c("#009999", "#0000FF"), #blue and teal
                hclustfun = function(x) hclust(x, method="ward.D"),
                Colv = rev(dendint),
                seriate = "mean",
@@ -428,21 +334,14 @@ server <- function(input, output) {
   
    ##currently displayed heatmap displays output from this heatmap
    output$statmap <- renderPlot({
-     progressHeat <- shiny::Progress$new()
-     on.exit(progressHeat$close())
-     progressHeat$set(message = "Making heatmap matrix", value = 0)
-     genesStat <- values$convertedgenes
-     #mapmat <- genHeatmap(genesStat(),input$genome) #should return table
      targetnum <- values$matobj
-     #statout <- values$stat
      statobj <- heatmap.2(as.matrix(targetnum), Rowv = T, Colv = T,
                           col = viridis(n = 256, alpha = 1, begin = 0, end = 1, option = "viridis"),
-                trace = "none", #labRow = rownames(mapmat),
+                trace = "none", 
                 labRow = rownames(targetnum),
                 cexRow=0.5,
                 cexCol=0.3,
                 hclustfun=function(x) hclust(x, method="ward.D")
-                #distfun = dist
                )
      statobj
      statdend <- statobj[["colDendrogram"]]
@@ -540,16 +439,8 @@ server <- function(input, output) {
     downloadHandler(
       filename = function() { 'heatmaply.html' },
       content = function(outfile) {
-        #req(indHeat())
-        #png(file, width=1200, height=1200,res=300, pointsize=8)
-        #pdf(file)
-        #par(mar=c(10,2,2,3), cex=1.0)
-        cat("setup heatmaply")
         maplyout <- values$matobj
-        #indHeatmaply()
         dendint <- values$dendstat
-        #dir.create("folder")
-        #data("mtcars")
         tmp <- heatmaply(maplyout, cexRow = 0.5, cexCol = 0.3,
                    #colors = viridis(n = 256, alpha = 1, begin = 0, end = 1, option = "viridis"), 
                    #colors = cm.colors(256),
@@ -562,86 +453,77 @@ server <- function(input, output) {
                    plot_method = "plotly",
                    file = outfile
         )
-        #tmp
-
-        #browseURL("folder/heatmaply_plot.html")
         cat("Finished in download")
         while (!is.null(dev.list()))  dev.off()
         
       })
   })
 
-  #values$fdroutput <- 
-  
   
   genGraph <- reactive({
     cat("in gen graph")
     genesNet <- values$convertedgenes
-    
-    if (is.null(input$decimal)) {
-      cat("null cond")
-      nets <- makenetgraph(genesNet, input$genome, 0.05)
-      firstcall <- TRUE
-      values$call <- firstcall
-    }
-    else {
-      cat("else cond")
-      cat("value of input$decimal", input$decimal ,"\n")
-      nets <- makenetgraph(genesNet, input$genome, input$decimal)
+    nets <- makenetgraph(genesNet, input$genome, input$decimal)
       
-    }
+    
     values$netsobj <- nets[[1]]
     values$circsobj <- nets[[2]]
     values$sigsTF <- nets[[3]]
   })
   
+  ##Initialize Graph
+  # observeEvent(input$subTabPanel1, {
+  #   cat("in obs event")
+  #   if (input$subTabPanel1 == "Get Started") { 
+  #     progressNet <- shiny::Progress$new()
+  #     on.exit(progressNet$close())
+  #     progressNet$set(message = "Initializing Graph", value = 0.50)
+  #     req(genGraph())
+  #     progressNet$set(message = "Rendering Graph", value = 0.80)
+  #     
+  #   }
+  #   
+  #   #}
+  # })
+  # 
+  ##Regenerate graph
+  observeEvent(input$decimal, {
+    cat("in slider change")
+    progressGen <- shiny::Progress$new()
+    on.exit(progressGen$close())
+    progressGen$set(message = "Regenerating graph elements", value = 0.50)
+    progressGen$set(message = "Rendering Graph", value = 0.80)
+    
+    req(genGraph())
+    
+   
+  })
+  output$text <- renderText({paste0("You are viewing tab \"", input$subTabPanel1, "\"")})
+  
+  
   output$net  <- renderVisNetwork({
-    if (is.numeric(input$decimal)){
-    #if (input$decimal != 0.05){
-      req(genGraph())
-    }
-    progressNet <- shiny::Progress$new()
-    on.exit(progressNet$close())
-    progressNet$set(message = "Making Network-Style Graph", value = 0.50)
-    genesNet <- values$convertedgenes
-    #networks <- makenetgraph(genesNet, input$genome, input$decimal)
-    #values$graphobj <- networks
-    progressNet$set(message = "Rendering Graph", value = 0.80)
-    
-    #networks[[1]]
-    #networks[[2]]
-    
-    #values$netobj <- networks[[1]]
-    
     netout <- values$netsobj
     netout
     
-    #validate(
-    #  need(nrow(networks[[3]]) > 0, "No DE genes based on parameters for fdrout try changing parameters")
-    #)
-  }) # created input$mynetwork_selected
+  }) 
   
   output$circ  <- renderVisNetwork({
-    if (input$decimal != 0.05){
-      req(genGraph())
-    }
-    progressCirc <- shiny::Progress$new()
-    on.exit(progressCirc$close())
-    progressCirc$set(message = "Making Circle-Style Graph", value = 0.50)
-    genesCirc <- values$convertedgenes
-    #networks <- makenetgraph(genesCirc, input$genome, input$decimal)
-    progressCirc$set(message = "Rendering Graph", value = 0.80)
-    #networks[[2]]
-    #networks[[2]]
-    #values$circobj <- networks[[2]]
     circout <- values$circsobj
     circout
     
     
   }) 
   
+  output$sigTFs <- renderTable({
+    if(is.null(input$file1))  
+      return(NULL) 
+    sigout <- values$sigsTF
+    sigout
+    
+  })
+  
   output$nettab <- renderUI({
-    tabsetPanel(id = "subTabPanel1", 
+    tabsetPanel(id = "subTabPanel1",
                 tabPanel("Get Started",
                         h1(strong("TF-Gene Relationship Visualization Tool")),
                         h4("The goal of this tool is take your differentially expressed genes of interest
@@ -674,17 +556,15 @@ server <- function(input, output) {
                         h3(strong("References")),
                         h4("1. TRRUST v2: an expanded reference database of human and mouse 
                             transcriptional regulatory interactions. Nucleic Acids Research 26 Oct, 2017
-                          ")
-                        
-                        
+                          "),
+                        textOutput("text")
                         
                         
                      
                 ),
-                tabPanel("Network-Style", 
+                tabPanel("Network-Style",
                          visNetworkOutput("net",  width = "900px", height = "500px"),
                          downloadButton("downloadNet", "Download")
-                         
                          
                 ),
                 tabPanel("Circle-Style",
@@ -697,6 +577,7 @@ server <- function(input, output) {
                          downloadButton("downloadsigTFs", "Download")
                          
                 ),
+                #textOutput("geneout"),
                 sliderInput("decimal", "Significance Cutoff:",
                             min = 0, max = 1,
                             value = 0.05, step = 0.05)
@@ -707,32 +588,7 @@ server <- function(input, output) {
     
   })
   
-  output$sigTFs <- renderTable({
-    if (input$decimal != 0.05){
-      req(genGraph())
-    }
-    
-    if(is.null(input$file1))  
-      return(NULL) 
-    
-    progressSig <- shiny::Progress$new()
-    on.exit(progressSig$close())
-    progressSig$set(message = "Generating Table of Significant Transcription Factors", value = 0.50)
-    genesSig <- values$convertedgenes
-    #networks <- makenetgraph(genesSig, input$genome, input$decimal)
-    progressSig$set(message = "Rendering Table", value = 0.80)
-    
-    #networks[[3]]
-    #values$sigTFobj <- networks[[3]]
-    
-    #values$sigTFobj <- networks[[3]]
-    sigout <- values$sigsTF
-    sigout
-   
-  })
- # created input$mynetwork_selected
-  
-  #visSave(network, file = "network.html")
+
 
 
   output$downloadNet <- ({

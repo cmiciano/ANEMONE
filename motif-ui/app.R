@@ -211,7 +211,8 @@ server <- function(input, output) {
      df <- read.delim(input$file1$datapath,
                       sep = input$sep,
                       quote = input$quote,
-                      stringsAsFactors = F)
+                      stringsAsFactors = F,
+                      header = F)
      values$origsym <- df
      
      # input$file1 will be NULL initially. After the user selects

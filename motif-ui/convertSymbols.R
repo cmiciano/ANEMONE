@@ -11,7 +11,7 @@
 convertGenes <- function(infile_name, genome_type, idtype) {
 inputgenesdata <- read.delim(infile_name, header = F, stringsAsFactors = F)
 #inputgenesdata <-read.delim("motif-genes-app/inputgenes.txt", stringsAsFactors = F, header = F)
-
+#inputgenesdata <- read.delim("/Users/charlenemiciano/Documents/Salk/TFMatrix/ex_tfgenes.txt")
 ## Example file 
 #GeneID
 #inputgenesdata <- read.delim("~/Documents/Salk/TFMatrix/31geneidmm10.txt",
@@ -34,14 +34,14 @@ names(inputgenesdata) <- "gene_symbol"
 
 if (genome_type == "mm10") {
   cat("Using mm10 genome\n")
-  #generef <- read.delim("motif-genes-app/motif-ui/data/mm10_GeneIDsymbol.tsv", 
-  #                      header=TRUE, stringsAsFactors = F) #for troubleshooting
+  #generef <- read.delim("motif-ui/data/mm10_GeneIDsymbol.tsv", 
+  #                     header=TRUE, stringsAsFactors = F) #for troubleshooting
   generef <- read.delim("data/mm10_GeneIDsymbol.tsv", 
                         header=TRUE, stringsAsFactors = F)
   
 } else if(genome_type == "hg19") {
   cat("Using hg19 genome\n")
-  #generef <- read.delim("motif-genes-app/motif-ui/data/hg19_GeneIDsymbol.tsv", 
+  #generef <- read.delim("motif-ui/data/hg19_GeneIDsymbol.tsv", 
   #                      header=TRUE, stringsAsFactors = F)
   generef <- read.delim("data/hg19_GeneIDsymbol.tsv", 
                         header=TRUE, stringsAsFactors = F)
@@ -78,6 +78,7 @@ if(idtype == "geneid") {
 cat("Converting input genes to in Ensembl ID...\n")
 outgenes <- as.character(sub$name)
 outgenes <- outgenes[!outgenes == ""] #Remove blank genes
+outgenes <- outgenes[order(outgenes)] ## Reorder maybe here?
 outgenes <- data.frame(outgenes)
 names(outgenes) <- "name"
 #write.table(outgenes, "outputgenes.txt", row.names = F, col.names = F, quote = F)

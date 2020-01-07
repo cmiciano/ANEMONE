@@ -85,9 +85,8 @@ ui <- fluidPage(
                 multiple = FALSE,
                 accept = c("text/csv",
                            "text/comma-separated-values,text/plain",
-                           ".csv")),
+                           ".csv"))
       
-      actionButton("runAnalysesButton","Run Analyses")
       
       
       
@@ -126,11 +125,15 @@ ui <- fluidPage(
                              column(1,
                                     h4("Inputted"),
                                     tableOutput("contents"),
-                                    downloadButton("downloadGenes", "Download Converted Genes")),
+                                    downloadButton("downloadGenes", "Download Converted Genes"))
+                             ,
                              column(2,offset = 1, 
                                     h4("Converted"),
                                     tableOutput("changed"))
-                           )
+                           ),
+                           h3("Once your genes have been converted click the Run Analyses button"),
+                           actionButton("runAnalysesButton","Run Analyses")
+                           
                   ),
                   tabPanel("Motif/Gene Table", uiOutput("mattab"), downloadButton("downloadTab", "Download")),
                   tabPanel("PCA", plotOutput("plot"),
@@ -154,6 +157,11 @@ server <- function(input, output) {
     actionButton("runAnalysesButton", "Run analyses")
   })
   
+  promptNext <- observeEvent(input$file1, {
+    id <- showNotification("Move to Input Genes tab to convert genes", duration = 5 , type = "message")
+    
+  }
+  )
   data <- observeEvent(input$runAnalysesButton, {
     input$button2  
     progressSig <- shiny::Progress$new()
@@ -211,6 +219,10 @@ server <- function(input, output) {
      # or all rows if selected, will be shown.
     
      origcont <- values$origsym
+     #validate(
+     #  need(nrow(origcont) > 5, "Your list has 5 or less genes, add more genes for higher accuracy")
+     #)
+     names(origcont) <- "original"
      head(origcont)
    })
 
@@ -224,7 +236,9 @@ server <- function(input, output) {
      
      validate(
        need(nrow(newout) > 0, "No genes found, make sure you inputted the correct gene ID type")
+       #need(nrow(newout) > 5, "Your list has 5 or less genes, add more genes for higher accuracy")
      )
+     
      head(newout)
      
 
@@ -249,8 +263,18 @@ server <- function(input, output) {
       return(NULL)
    
     mattable <- values$geneobj
-    #head(mattable)
-    mattable[1:20,1:8]
+    if(nrow(mattable) > 20 && ncol(mattable) > 8) {
+      mattable[1:20,1:8] ## if both truncate
+    } else if(nrow(mattable) > 20 && ncol(mattable) < 8) {
+      mattable[1:20,] #if 20 only greater than truncate
+    } else if(nrow(mattable) < 20 && ncol(mattable) > 8) {
+      mattable[,1:8] #if 20 only greater than truncate
+      
+    }
+    else{
+      head(mattable) #if small enough just display all
+      
+    }
 
   })
   

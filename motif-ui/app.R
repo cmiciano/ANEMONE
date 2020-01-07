@@ -477,6 +477,9 @@ server <- function(input, output) {
     values$sigTFobj <- nets[[3]]
   })
   
+
+  
+  
   ##Initialize Graph
   # observeEvent(input$subTabPanel1, {
   #   cat("in obs event")
@@ -509,12 +512,20 @@ server <- function(input, output) {
   
   output$net  <- renderVisNetwork({
     netout <- values$netobj
+    
+    validate(
+      need(is.null(netout) == FALSE, "No DE genes based on significance cutoff, try changing parameters")
+    )
     netout
     
+
   }) 
   
   output$circ  <- renderVisNetwork({
     circout <- values$circobj
+    validate(
+      need(is.null(circout) == FALSE, "No DE genes based on significance cutoff, try changing parameters")
+    )
     circout
     
     
@@ -524,6 +535,9 @@ server <- function(input, output) {
     if(is.null(input$file1))  
       return(NULL) 
     sigout <- values$sigTFobj
+    validate(
+      need(is.null(sigout) == FALSE, "No DE genes based on significance cutoff, try changing parameters")
+    )
     sigout
     
   })
@@ -585,8 +599,8 @@ server <- function(input, output) {
                 ),
                 #textOutput("geneout"),
                 sliderInput("decimal", "Significance Cutoff:",
-                            min = 0, max = 1,
-                            value = 0.05, step = 0.05)
+                            min = 0, max = 0.2,
+                            value = 0.05, step = 0.01)
     )
     
     

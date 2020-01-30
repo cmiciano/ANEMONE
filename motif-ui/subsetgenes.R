@@ -7,8 +7,8 @@ args<-commandArgs(trailingOnly=T)
 
 generatePCA <- function(infile_name,genome) {
 
-targetmatnmum <- infile_name
-transformed <-targetmatnmum #motifs by genes 
+targetmatnum <- infile_name
+transformed <-targetmatnum #motifs by genes 
 print("transformed dim\n")
 print(dim(transformed))
 no_zeroes <- transformed[ , apply(transformed, 2, var, na.rm = TRUE) != 0]

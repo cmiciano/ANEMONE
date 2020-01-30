@@ -65,17 +65,17 @@ genHeatmap <- function(infile_name,genome) {
   motifnm <- colnames(targetgenes)
   genenm <- targetgenes$ID
   
-  targetmatnmum <- targetgenes[,2:ncol(targetgenes)] #absolute counts of motif occurrences
-  cat(head(targetmatnmum[1:10,1]))
-  rownames(targetmatnmum) <- genenm
-  targetmatnmum <- log(targetmatnmum+5) #genes by motif #originally natural log what if log10?
-  #targetmatnmum <- targetmatnmum[7:10,1:10] #genes by motif
+  targetmatnum <- targetgenes[,2:ncol(targetgenes)] #absolute counts of motif occurrences
+  cat(head(targetmatnum[1:10,1]))
+  rownames(targetmatnum) <- genenm
+  targetmatnum <- log(targetmatnum+5) #genes by motif #originally natural log what if log10?
+  #targetmatnum <- targetmatnum[7:10,1:10] #genes by motif
  #temporary for figure use
   
-  cat(head(targetmatnmum[1:10,1]))
+  cat(head(targetmatnum[1:10,1]))
   print("ret gen")
-  #heatobj <- heatmaply(targetmatnmum)
-  targetobj <- list(targetmatnmum, targetgenes)
+  #heatobj <- heatmaply(targetmatnum)
+  targetobj <- list(targetmatnum, targetgenes)
   return(targetobj) ##Return dataframe
   #return(heatobj) ##Return heatmap object
    #fsfsf

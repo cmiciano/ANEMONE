@@ -13,6 +13,7 @@ library(gplots)
 library(heatmaply)
 library(bsplus)
 library(htmltools)
+library(htmlwidgets)
 library(shinythemes)
 library(RColorBrewer)
 
@@ -138,7 +139,7 @@ ui <- fluidPage(
                            
                   ),
                   tabPanel("Motif/Gene Table", uiOutput("mattab"), downloadButton("downloadTab", "Download")),
-                  tabPanel("PCA", plotOutput("plot"),
+                  tabPanel("PCA", plotlyOutput("plot"),
                             downloadButton("save", "Download")),
                   tabPanel("Heatmaps", uiOutput("heattab")),
                   tabPanel("Network Graph", uiOutput("nettab"))
@@ -310,32 +311,97 @@ server <- function(input, output) {
     
     ymax <- round(max(pcaDF$PC2))+1
     ymin <- round(min(pcaDF$PC2))-1
-    ggplot(pcaDF,aes(PC1 ,PC2)) +
+    pcaobj <- ggplot(pcaDF,aes(PC1 ,PC2)) +
       ggtitle("Genes Grouped by Common Motifs") +
       xlab(paste("PC1",round(pc1var * 100, 0), "%"))+
       ylab(paste("PC2",round(pc2var * 100, 0), "%")) +
       xlim(xmin, xmax) + 
       ylim(ymin,ymax) +
       geom_point(size = 3) +
+      geom_text(label= groupnum, size = 3, nudge_y = 1) +
       theme_classic() 
+    
+    ggplotly(pcaobj)
+    #pcaobj
+    #values$pcaplot <- pcaobj
+
   })
   
-  
-  output$plot <- renderPlot({
+  #output$plot <- renderPlot({
+  output$plot <- renderPlotly({
     req(individualGraph())
     individualGraph()
   })
   
-  output$save <- downloadHandler(
-    filename = "save.png" ,
-    content = function(file) {
-      req(individualGraph())
-      ggsave(file, plot = individualGraph(), device = 'png')
-      while (!is.null(dev.list()))  dev.off()
-      
-      #dev.off()
-    })
+  # output$save <- downloadHandler(
+  #   filename = "save.html" ,
+  #   content = function(file) {
+  #     req(individualGraph())
+  #     p <- values$pcaplot 
+  #     #ggsave(file, plot = individualGraph(), device = 'html')
+  #     htmlwidgets::saveWidget(p, "test.html")
+  #     while (!is.null(dev.list()))  dev.off()
+  #     cat("Finished in download PCA")
+  #     
+  #     #dev.off()
+  #   })
   
+  output$save <- downloadHandler(
+    filename = function() {
+      "data.html"
+    },
+    content = function(file) {
+      pcaOut <- values$pca
+      pcaDF <- pcaOut[[1]]
+      pc1var <- pcaOut[[2]]
+      pc2var <- pcaOut[[3]]    
+      groupnum <- rownames(pcaDF)
+      
+      xmax <- round(max(pcaDF$PC1))+1
+      xmin <- round(min(pcaDF$PC1))-1
+      
+      ymax <- round(max(pcaDF$PC2))+1
+      ymin <- round(min(pcaDF$PC2))-1
+      pcaobj <- ggplot(pcaDF,aes(PC1 ,PC2)) +
+        ggtitle("Genes Grouped by Common Motifs") +
+        xlab(paste("PC1",round(pc1var * 100, 0), "%"))+
+        ylab(paste("PC2",round(pc2var * 100, 0), "%")) +
+        xlim(xmin, xmax) + 
+        ylim(ymin,ymax) +
+        geom_point(size = 3) +
+        geom_text(label= groupnum, size = 3, nudge_x = 1) +
+        theme_classic() 
+      
+      values$plt <- ggplotly(pcaobj)
+      
+      saveWidget(as_widget(values$plt), file, selfcontained = TRUE)
+      
+    }
+  )
+  
+  # output$downloadHeatmaply <- ({
+  #   downloadHandler(
+  #     filename = function() { 'pcaplot.html' },
+  #     content = function(outfile) {
+  #       maplyout <- values$matobj
+  #       dendint <- values$dendstat
+  #       tmp <- heatmaply(maplyout, cexRow = 0.5, cexCol = 0.3,
+  #                        colors = viridis(n = 256, alpha = 1, begin = 0, end = 1, option = "viridis"), 
+  #                        #colors = cm.colors(256),
+  #                        #colors = hmcol,
+  #                        #colors=c("#009999", "#0000FF"), #blue and teal
+  #                        hclustfun = function(x) hclust(x, method="ward.D"),
+  #                        Colv = rev(dendint),
+  #                        seriate = "mean",
+  #                        row_dend_left = TRUE, 
+  #                        plot_method = "plotly",
+  #                        file = outfile
+  #       )
+  #       cat("Finished in download")
+  #       while (!is.null(dev.list()))  dev.off()
+  #       
+  #     })
+  # })
 
   output$heatmap <- renderPlotly({
      #if(is.null(input$file1))

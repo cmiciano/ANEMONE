@@ -286,7 +286,8 @@ makenetgraph<-function(genes, dbinput, fdroutput) {
   ### Creates network graph ####
   graph <- visNetwork(nodes = datavo$nodes, edges = datavo$edges, height = "700px", width = "100%") %>%
     visOptions(highlightNearest = list(enabled = T, degree = 1, hover = T)) %>%
-    visInteraction(keyboard = TRUE, tooltipDelay = 0, tooltipStay = 10000) %>%
+    visInteraction(keyboard = FALSE, tooltipDelay = 0, tooltipStay = 10000) %>%
+    visInteraction(navigationButtons = TRUE)  %>%
     visLayout(randomSeed = 18) %>%
     visLegend(addNodes = legendnodes, addEdges = legendedges, useGroups = F)
   
@@ -303,7 +304,8 @@ makenetgraph<-function(genes, dbinput, fdroutput) {
   #Creates circle graph
   circgraph <- visNetwork(nodes = datavo$nodes, edges = datavo$edges, height = "700px", width = "100%") %>%
     visOptions(highlightNearest = list(enabled = T, degree = 1, hover = T)) %>%
-    visInteraction(keyboard = TRUE, tooltipDelay = 0, tooltipStay = 5000) %>%
+    visInteraction(keyboard = FALSE, tooltipDelay = 0, tooltipStay = 10000) %>%
+    visInteraction(navigationButtons = TRUE)  %>%
     visIgraphLayout(layout = "layout_in_circle") %>%
     visLayout(randomSeed = 321) %>%
     visLegend(addNodes = legendnodes, addEdges = legendedges, useGroups = F)

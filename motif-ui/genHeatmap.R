@@ -24,7 +24,8 @@ genHeatmap <- function(infile_name,genome) {
   #inputvec <- inputvec[1:10]
   if (genome == "hg19") {
     allTFcounts <- read.delim("data/allTFcounts.txt", stringsAsFactors=FALSE)
-    
+    #allTFcounts <- read.delim("motif-ui/data/allTFcounts.txt", stringsAsFactors=FALSE)
+
   } else if (genome == "mm10") {
     allTFcounts <- read.delim("data/allTFcountsmm10.txt", stringsAsFactors=FALSE)
     
@@ -32,6 +33,7 @@ genHeatmap <- function(infile_name,genome) {
   
   
   ### Subset expression matrix by the representative motifs
+  #repmotifs <- read.delim("motif-ui/data/163repmotifssummary.txt", stringsAsFactors=FALSE)
   repmotifs <- read.delim("data/163repmotifssummary.txt", stringsAsFactors=FALSE)
   
   
@@ -63,10 +65,12 @@ genHeatmap <- function(infile_name,genome) {
   motifnm <- colnames(targetgenes)
   genenm <- targetgenes$ID
   
-  targetmatnmum <- targetgenes[,2:ncol(targetgenes)]
+  targetmatnmum <- targetgenes[,2:ncol(targetgenes)] #absolute counts of motif occurrences
   cat(head(targetmatnmum[1:10,1]))
   rownames(targetmatnmum) <- genenm
-  targetmatnmum <- log(targetmatnmum+5) #genes by motif
+  targetmatnmum <- log(targetmatnmum+5) #genes by motif #originally natural log what if log10?
+  #targetmatnmum <- targetmatnmum[7:10,1:10] #genes by motif
+ #temporary for figure use
   
   cat(head(targetmatnmum[1:10,1]))
   print("ret gen")

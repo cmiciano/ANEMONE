@@ -11,7 +11,6 @@ library(shiny)
 library(ggplot2) 
 library(gplots)
 library(heatmaply)
-library(shinyHeatmaply)
 library(bsplus)
 library(htmltools)
 library(shinythemes)
@@ -22,7 +21,7 @@ ui <- fluidPage(
   theme = shinytheme("cosmo"),
   
   # App title ----
-  titlePanel("Motif/Gene Clustering Tool"),
+  titlePanel(h1(strong("ANEMONE"))),
   
   # Sidebar layout with input and output definitions ----
   sidebarLayout(
@@ -98,7 +97,7 @@ ui <- fluidPage(
       
       tabsetPanel(type = "tabs",
                   tabPanel("Get Started", 
-                           h1(strong("Welcome to the tool")),
+                           h2(strong("Welcome to ANEMONE")),
                            h4("The goal of this tool is take your differentially expressed genes of interest
                               and cluster these genes based on the motifs that are associated with each of them.
                               Our assumption is that genes that occur near similar motifs will be regulated by
@@ -108,12 +107,15 @@ ui <- fluidPage(
                                a PCA plot and two heatmaps, one that is interactive, and another that is static."),
                 
                            
-                           h2(strong("Steps")),
-                           h4("1. Select the genome of interest, hg19 or mm10"),
-                           h4("2. Select the current Gene ID type of your data. We will convert them to 
-                              gene symbols."),
-                           h4("3. Upload your file of gene symbols"),
-                           h4("4. Navigate to the other tabs to see visualizations of your data"),
+                           h3(strong("Steps")),
+                           h4("1. Select the how your genes of interest are separated, comma, semicolon, tab or whitespace"),
+                           h4("2. Select whether or not your gene IDs have single quotes, double quotes or none at all"),
+                           
+                           h4("3. Select the genome your genes belong to"),
+                           h4("4. Select the current gene ID type of your data"),
+                           h4("5. Upload your file of gene IDs"),
+                           h4("6. Go to the 'Input Genes' tab and click the button 'Run Analysis'.
+                              Afterward you will be able to see different visualizations of your clusterings"),
                            tags$hr(),
                            
                            h4("Below is a text file of gene IDs you can use as input"),
@@ -131,8 +133,8 @@ ui <- fluidPage(
                                     h4("Converted"),
                                     tableOutput("changed"))
                            ),
-                           h3("Once your genes have been converted click the Run Analyses button"),
-                           actionButton("runAnalysesButton","Run Analyses")
+                           h3("Once your genes have been converted click the Run Analysis button"),
+                           actionButton("runAnalysisButton","Run Analysis")
                            
                   ),
                   tabPanel("Motif/Gene Table", uiOutput("mattab"), downloadButton("downloadTab", "Download")),
@@ -151,10 +153,10 @@ ui <- fluidPage(
 server <- function(input, output) {
   values <- reactiveValues()
   
-  output$runAnalyses <- renderUI({
+  output$runAnalysis <- renderUI({
     if(is.null(input$file1))  
       return(NULL)
-    actionButton("runAnalysesButton", "Run analyses")
+    actionButton("runAnalysisButton", "Run analysis")
   })
   
   promptNext <- observeEvent(input$file1, {
@@ -162,7 +164,7 @@ server <- function(input, output) {
     
   }
   )
-  data <- observeEvent(input$runAnalysesButton, {
+  data <- observeEvent(input$runAnalysisButton, {
     input$button2  
     progressSig <- shiny::Progress$new()
     on.exit(progressSig$close())
@@ -349,8 +351,8 @@ server <- function(input, output) {
      #yb<-colorRampPalette(c("blue","white","red"))(100)
      #hmcol<-brewer.pal(11,"RdBu")
      
-     #heatmaply(mtcars, cexRow = 0.5, cexCol = 0.3,
-     heatmaply(targetnum, cexRow = 0.5, cexCol = 0.3,
+     #heatmaply(mtcars, cexRow = 1.5, cexCol = 1.5,
+     heatmaply(targetnum, cexRow = 0.5, cexCol = 1.0,
                colors = viridis(n = 256, alpha = 1, begin = 0, end = 1, option = "viridis"), 
                #colors = cm.colors(256),
                #colors = hmcol,
@@ -358,6 +360,9 @@ server <- function(input, output) {
                hclustfun = function(x) hclust(x, method="ward.D"),
                Colv = rev(dendint),
                seriate = "mean",
+               #fontsize_row = 20,
+               #fontsize_col = 20,
+               #cellnote_size = 24,#seems to be size of plot
                row_dend_left = TRUE, 
                plot_method = "plotly")
 
@@ -370,8 +375,12 @@ server <- function(input, output) {
                           col = viridis(n = 256, alpha = 1, begin = 0, end = 1, option = "viridis"),
                 trace = "none", 
                 labRow = rownames(targetnum),
-                cexRow=0.5,
-                cexCol=0.3,
+                cexRow=0.5, #1.5
+                cexCol=0.3, # 1.5
+                #sepwidth = c(0.01, 0.01),
+                #lhei = c(1,5),
+                #lwid = c(1,6),
+                #margins = c(13,20),
                 hclustfun=function(x) hclust(x, method="ward.D")
                )
      statobj
@@ -387,8 +396,8 @@ server <- function(input, output) {
    output$heattab <- renderUI({
      tabsetPanel(id = "heattab", 
                  tabPanel("Static Heatmap",
-                          tabPanel("Static Heatmap", plotOutput("statmap", width = "800px", height = "600px")),
-                          downloadButton("downloadHeat", "Download")
+                          tabPanel("Static Heatmap", plotOutput("statmap", width = "800px", height = "700px")),
+                          downloadButton("downloadHeat", "Download") ##orig 600px
                  ),
                  tabPanel("Interactive Heatmap", 
                           tabPanel("Heatmap", plotlyOutput("heatmap", width = "800px", height = "600px" )),
@@ -434,7 +443,7 @@ server <- function(input, output) {
     
     data("mtcars")
     #heatmap.2(as.matrix(mtcars), Rowv = T, Colv = T, col = viridis(n = 256, alpha = 1, begin
-    heatmaply(indmap, cexRow = 0.5, cexCol = 0.3,
+    heatmaply(indmap, cexRow = 0.5, cexCol = 1.0,
               #colors = viridis(n = 256, alpha = 1, begin = 0, end = 1, option = "viridis"), 
               #colors = cm.colors(256),
               #colors = hmcol,
@@ -442,6 +451,8 @@ server <- function(input, output) {
               hclustfun = function(x) hclust(x, method="ward.D"),
               Colv = rev(dendint),
               seriate = "mean",
+              #fontsize_row = 100,
+              #fontsize_col = 100,
               row_dend_left = TRUE, 
               plot_method = "plotly",
               file = "heatmaply_plot.html"
@@ -532,7 +543,7 @@ server <- function(input, output) {
     
    
   })
-  output$text <- renderText({paste0("You are viewing tab \"", input$subTabPanel1, "\"")})
+  #output$text <- renderText({paste0("You are viewing tab \"", input$subTabPanel1, "\"")})
   
   
   output$net  <- renderVisNetwork({
@@ -601,8 +612,8 @@ server <- function(input, output) {
                         h3(strong("References")),
                         h4("1. TRRUST v2: an expanded reference database of human and mouse 
                             transcriptional regulatory interactions. Nucleic Acids Research 26 Oct, 2017
-                          "),
-                        textOutput("text")
+                          ")
+                        #textOutput("text")
                         
                         
                      

@@ -97,65 +97,12 @@ ui <- fluidPage(
     mainPanel(
       
       tabsetPanel(type = "tabs",
-                  tabPanel("Get Started", 
-                           h2(strong("Welcome to ANEMONE")),
-                           h4("The goal of this tool is take your differentially expressed genes of interest
-                              and cluster these genes based on the motifs that are associated with each of them.
-                              Our assumption is that genes that occur near similar motifs will be regulated by
-                              similar transcription factors."),
-                           h4("In the first tab, we will convert your gene IDs to gene symbols."),
-                           h4("Afterwards, we will cluster your genes based on their motifs and output them to
-                               a PCA plot and two heatmaps, one that is interactive, and another that is static."),
-                
-                           
-                           h3(strong("Steps")),
-                           h4("1. Select the how your genes of interest are separated, comma, semicolon, tab or whitespace"),
-                           h4("2. Select whether or not your gene IDs have single quotes, double quotes or none at all"),
-                           
-                           h4("3. Select the genome your genes belong to"),
-                           h4("4. Select the current gene ID type of your data"),
-                           h4("5. Upload your file of gene IDs"),
-                           h4("6. Go to the 'Input Genes' tab and click the button 'Run Analysis'.
-                              Afterward you will be able to see different visualizations of your clusterings"),
-                           tags$hr(),
-                           
-                           h4("Below is a text file of gene IDs you can use as input"),
-                           downloadButton("downloadEx", "Download Example File")
-                  
-                           ),
-                  tabPanel("Input Genes", 
-                           fluidRow(
-                             column(1,
-                                    h4("Inputted"),
-                                    tableOutput("contents"),
-                                    downloadButton("downloadGenes", "Download Converted Genes"))
-                             ,
-                             column(2,offset = 1, 
-                                    h4("Converted"),
-                                    tableOutput("changed"))
-                           ),
-                           h3("Once your genes have been converted click the Run Analysis button"),
-                          actionButton("runAnalysisButton","Run Analysis"),
-                          #uiOutput("condButton"),
-                          
-                     
-                           # conditionalPanel(
-                           #   condition = ("input.runAnalysisButton == 0"),
-                           #   h3("Instructions for calculator")
-                           # ),
-                           # conditionalPanel(
-                           #   condition = ("input.runAnalysisButton == 1"),
-                           #   tabPanel(
-                           #     "Summary",
-                           #     h3("Outputs calculated based on user inputs")
-                           #   )
-                           
-                  ),
+                 
                   #tabPanel("Motif/Gene Table", uiOutput("mattab"), downloadButton("downloadTab", "Download")),
                   #tabPanel("PCA", plotlyOutput("plot"),
                   #          downloadButton("save", "Download")),
                   #tabPanel("Heatmaps", uiOutput("heattab")),
-                  tabPanel("Motif Clustering Tool", uiOutput("motifclusttab")),
+                  tabPanel("Gene Clustering Tool", uiOutput("motifclusttab")),
                   
                   tabPanel("Network Graph Tool", uiOutput("nettab"))
 
@@ -703,7 +650,60 @@ server <- function(input, output) {
   
   output$motifclusttab <-  renderUI({
       tabsetPanel(id = "subTabPanel2",
-         
+                  tabPanel("Get Started", 
+                           h2(strong("Gene Clustering Tool")),
+                           h4("The goal of this tool is take your differentially expressed genes of interest
+                              and cluster these genes based on the motifs that are associated with each of them.
+                              Our assumption is that genes that occur near similar motifs will be regulated by
+                              similar transcription factors."),
+                           h4("In the first tab, we will convert your gene IDs to gene symbols."),
+                           h4("Afterwards, we will cluster your genes based on their motifs and output them to
+                              a PCA plot and two heatmaps, one that is interactive, and another that is static."),
+                           
+                           
+                           h3(strong("Steps")),
+                           h4("1. Select the how your genes of interest are separated, comma, semicolon, tab or whitespace"),
+                           h4("2. Select whether or not your gene IDs have single quotes, double quotes or none at all"),
+                           
+                           h4("3. Select the genome your genes belong to"),
+                           h4("4. Select the current gene ID type of your data"),
+                           h4("5. Upload your file of gene IDs"),
+                           h4("6. Go to the 'Input Genes' tab and click the button 'Run Analysis'.
+                              Afterward you will be able to see different visualizations of your clusterings"),
+                           tags$hr(),
+                           
+                           h4("Below is a text file of gene IDs you can use as input"),
+                           downloadButton("downloadEx", "Download Example File")
+                           
+                           ),
+                  tabPanel("Input Genes", 
+                           fluidRow(
+                             column(1,
+                                    h4("Inputted"),
+                                    tableOutput("contents"),
+                                    downloadButton("downloadGenes", "Download Converted Genes"))
+                             ,
+                             column(2,offset = 1, 
+                                    h4("Converted"),
+                                    tableOutput("changed"))
+                           ),
+                           h3("Once your genes have been converted click the Run Analysis button"),
+                           actionButton("runAnalysisButton","Run Analysis"),
+                           #uiOutput("condButton"),
+                           
+                           
+                           # conditionalPanel(
+                           #   condition = ("input.runAnalysisButton == 0"),
+                           #   h3("Instructions for calculator")
+                           # ),
+                           # conditionalPanel(
+                           #   condition = ("input.runAnalysisButton == 1"),
+                           #   tabPanel(
+                           #     "Summary",
+                           #     h3("Outputs calculated based on user inputs")
+                           #   )
+                           
+                  ),
                   tabPanel("Motif/Gene Table", uiOutput("mattab"), downloadButton("downloadTab", "Download")),
                   tabPanel("PCA", plotlyOutput("plot"),
                            downloadButton("save", "Download")),
@@ -719,7 +719,7 @@ server <- function(input, output) {
   output$nettab <- renderUI({
     tabsetPanel(id = "subTabPanel1",
                 tabPanel("Get Started",
-                        h1(strong("TF-Gene Relationship Visualization Tool")),
+                        h2(strong("TF-Gene Relationship Visualization Tool")),
                         h4("The goal of this tool is take your differentially expressed genes of interest
                            and display a network graph visualizing the transcription factors that are known to 
                           regulate these genes."),
@@ -732,7 +732,7 @@ server <- function(input, output) {
                            interact with your set of genes based on Fisher's exact test"),
                         h4("Adjusting the slider will regenerate the network graph based on the significance
                            cutoff you specify."),
-                        h3(strong("Reading the Network Graph")),
+                        h2(strong("Reading the Network Graph")),
                         h4("The network graph can be visualized in either network-style or circle-style."),
                         h4("Green Nodes represent the differentially expressed genes that you inputted as
                            gene IDs in a text file."),
@@ -747,7 +747,7 @@ server <- function(input, output) {
                            and the significance value of the overlap between the TF and your particular gene set."),
                         h4("This information is also presented in a table which you can download under the
                            TF table tab"),
-                        h3(strong("References")),
+                        h2(strong("References")),
                         h4("1. TRRUST v2: an expanded reference database of human and mouse 
                             transcriptional regulatory interactions. Nucleic Acids Research 26 Oct, 2017
                           ")

@@ -16,11 +16,11 @@ library(htmltools)
 library(htmlwidgets)
 library(shinythemes)
 library(RColorBrewer)
-
+library(shinyjs)
 # Define UI for data upload app ----
 ui <- fluidPage(
   theme = shinytheme("cosmo"),
-  
+  useShinyjs(),
   # App title ----
   titlePanel(h1(strong("ANEMONE"))),
   
@@ -135,7 +135,20 @@ ui <- fluidPage(
                                     tableOutput("changed"))
                            ),
                            h3("Once your genes have been converted click the Run Analysis button"),
-                           actionButton("runAnalysisButton","Run Analysis")
+                          actionButton("runAnalysisButton","Run Analysis"),
+                          #uiOutput("condButton"),
+                          
+                     
+                           # conditionalPanel(
+                           #   condition = ("input.runAnalysisButton == 0"),
+                           #   h3("Instructions for calculator")
+                           # ),
+                           # conditionalPanel(
+                           #   condition = ("input.runAnalysisButton == 1"),
+                           #   tabPanel(
+                           #     "Summary",
+                           #     h3("Outputs calculated based on user inputs")
+                           #   )
                            
                   ),
                   tabPanel("Motif/Gene Table", uiOutput("mattab"), downloadButton("downloadTab", "Download")),
@@ -154,10 +167,36 @@ ui <- fluidPage(
 server <- function(input, output) {
   values <- reactiveValues()
   
+  #need(nrow(newout) > 5, "Your list has 5 or less genes, add more genes for higher accuracy")
+  
+  
   output$runAnalysis <- renderUI({
     if(is.null(input$file1))  
       return(NULL)
     actionButton("runAnalysisButton", "Run analysis")
+  })
+  
+  # observe({
+  #    shinyjs::hide("runAnalysisButton")
+  #    newout <- values$convertedgenes
+  #  
+  #    if(!is.null(newout))
+  #      cat("Will show button")
+  #      shinyjs::show("runAnalysisButton")
+  # })
+
+  output$fromCol <- renderUI({
+    #df <-filedata()
+    newout <- values$convertedgenes
+    if (is.null(newout)) return(NULL)
+    newout <- values$convertedgenes
+    
+    actionButton("runAnalysisButton","Run Analysis")
+    shinyjs::show("runAnalysisButton")
+    #items=names(df)
+    #names(items)=items
+    #selectInput("GroupA", "Group A:",items, multiple=TRUE)
+    
   })
   
   promptNext <- observeEvent(input$file1, {
@@ -239,7 +278,7 @@ server <- function(input, output) {
      newout <- values$convertedgenes
      
      validate(
-       need(nrow(newout) > 0, "No genes found, make sure you inputted the correct gene ID type")
+       need(nrow(newout) > 4, "No genes found, make sure you inputted the correct gene ID type and that there are at least 5 genes")
        #need(nrow(newout) > 5, "Your list has 5 or less genes, add more genes for higher accuracy")
      )
      
@@ -267,6 +306,10 @@ server <- function(input, output) {
       return(NULL)
    
     mattable <- values$geneobj
+    
+    validate(
+      need(!is.null(mattable), "No genes inputted")
+    )
     if(nrow(mattable) > 20 && ncol(mattable) > 8) {
       mattable[1:20,1:8] ## if both truncate
     } else if(nrow(mattable) > 20 && ncol(mattable) < 8) {
@@ -300,7 +343,12 @@ server <- function(input, output) {
   individualGraph <- reactive({
     if(is.null(input$file1))  
       return(NULL) 
+    
+   
     pcaOut <- values$pca
+    validate(
+      need(!is.null(pcaOut), "No values for PCA")
+    )
     pcaDF <- pcaOut[[1]]
     pc1var <- pcaOut[[2]]
     pc2var <- pcaOut[[3]]    
@@ -411,6 +459,9 @@ server <- function(input, output) {
      progressHeat$set(message = "Making interactive heatmap", value = 0)
   
      targetnum <- values$matobj 
+     validate(
+       need(!is.null(targetnum) , "No genes inputted into interactive heatmap")
+     )
      progressHeat$set(message = "Plotting heatmap", value = 0.50)
 
      dendint <- values$dendstat
@@ -437,6 +488,9 @@ server <- function(input, output) {
    ##currently displayed heatmap displays output from this heatmap
    output$statmap <- renderPlot({
      targetnum <- values$matobj
+     validate(
+       need(!is.null(targetnum) , "No genes inputted into static heatmap")
+     )
      statobj <- heatmap.2(as.matrix(targetnum), Rowv = T, Colv = T,
                           col = viridis(n = 256, alpha = 1, begin = 0, end = 1, option = "viridis"),
                 trace = "none", 
@@ -571,6 +625,7 @@ server <- function(input, output) {
   genGraph <- reactive({
     cat("in gen graph")
     genesNet <- values$convertedgenes
+    if (is.null(genesNet)) return(NULL)
     nets <- makenetgraph(genesNet, input$genome, input$decimal)
       
     

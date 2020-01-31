@@ -151,11 +151,13 @@ ui <- fluidPage(
                            #   )
                            
                   ),
-                  tabPanel("Motif/Gene Table", uiOutput("mattab"), downloadButton("downloadTab", "Download")),
-                  tabPanel("PCA", plotlyOutput("plot"),
-                            downloadButton("save", "Download")),
-                  tabPanel("Heatmaps", uiOutput("heattab")),
-                  tabPanel("Network Graph", uiOutput("nettab"))
+                  #tabPanel("Motif/Gene Table", uiOutput("mattab"), downloadButton("downloadTab", "Download")),
+                  #tabPanel("PCA", plotlyOutput("plot"),
+                  #          downloadButton("save", "Download")),
+                  #tabPanel("Heatmaps", uiOutput("heattab")),
+                  tabPanel("Motif Clustering Tool", uiOutput("motifclusttab")),
+                  
+                  tabPanel("Network Graph Tool", uiOutput("nettab"))
 
       )
     )
@@ -698,6 +700,21 @@ server <- function(input, output) {
     sigout
     
   })
+  
+  output$motifclusttab <-  renderUI({
+      tabsetPanel(id = "subTabPanel2",
+         
+                  tabPanel("Motif/Gene Table", uiOutput("mattab"), downloadButton("downloadTab", "Download")),
+                  tabPanel("PCA", plotlyOutput("plot"),
+                           downloadButton("save", "Download")),
+                  tabPanel("Heatmaps", uiOutput("heattab"))
+      
+      )
+      
+      
+    })
+    
+    
   
   output$nettab <- renderUI({
     tabsetPanel(id = "subTabPanel1",

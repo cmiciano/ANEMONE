@@ -1,1 +1,2 @@
-# motif-genes-app
+# ANEMONE
+Code repository for ANEMONE. 

@@ -3,12 +3,9 @@ Differentially expressed genes are commonly clustered by gene expression to lear
 
 <br>
 <br>
-ANEMONE is hosted at anemone.salk.edu for online use.
-<br>
-ANEMONE was made using RShiny under the R computing environment (Chang et al., 2019). It is dependent on packages include gplots (Gregory et al., 2019), ggplot2 (Wickham, 2016), heatmaply (Galili et al, 2018), and visNetwork (Almende et al., 2019).
-<br>
-Contact: micianoc@gmail.com or mshokhirev@salk.edu
+ANEMONE is hosted at anemone.salk.edu for online use. It was made using RShiny under the R computing environment (Chang et al., 2019). It is dependent on packages include gplots (Gregory et al., 2019), ggplot2 (Wickham, 2016), heatmaply (Galili et al, 2018), and visNetwork (Almende et al., 2019). Questions and comments can be directed to micianoc@gmail.com or mshokhirev@salk.edu
 
+<br>
 <br>
 <br>
 

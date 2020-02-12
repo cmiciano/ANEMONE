@@ -7,22 +7,26 @@ source('convertSymbols.R')
 source('subsetgenes.R')
 source('genHeatmap.R')
 source('sig_tf_matrix_motif.R')
-library(shiny) 
-library(ggplot2) 
-library(gplots)
-library(heatmaply)
-library(bsplus)
+library(shiny) #seems fine
+library(ggplot2)  #As of rlang 0.4.0, dplyr must be at least version 0.8.0.
+#✖ dplyr 0.7.4 is too old for rlang 0.4.4.
+library(gplots) #fine
+library(heatmaply) #Loading required package: plotly #shiny function? Loading required package: ggplot2
+#Warning: As of rlang 0.4.0, dplyr must be at least version 0.8.0.
+#✖ dplyr 0.7.4 is too old for rlang 0.4.4.
+library(bsplus) #causes to disconnect immediately
 library(htmltools)
-library(htmlwidgets)
-library(shinythemes)
-library(RColorBrewer)
-library(shinyjs)
+library(htmlwidgets) #Please upgrade the 'shiny' package to (at least) version 1.1
+library(plotly) 
+library(shinythemes) #could not find shiny theme
+library(RColorBrewer) #fine
+#library(shinyjs)
 # Define UI for data upload app ----
 ui <- fluidPage(
   theme = shinytheme("cosmo"),
-  useShinyjs(),
+  #useShinyjs(),
   # App title ----
-  titlePanel(h1(strong("ANEMONE"))),
+  titlePanel(h1(strong("ANEMONE")), windowTitle="ANEMONE"),
   
   # Sidebar layout with input and output definitions ----
   sidebarLayout(
@@ -141,7 +145,7 @@ server <- function(input, output) {
     newout <- values$convertedgenes
     
     actionButton("runAnalysisButton","Run Analysis")
-    shinyjs::show("runAnalysisButton")
+    #shinyjs::show("runAnalysisButton")
     #items=names(df)
     #names(items)=items
     #selectInput("GroupA", "Group A:",items, multiple=TRUE)
@@ -308,14 +312,14 @@ server <- function(input, output) {
     
     ymax <- round(max(pcaDF$PC2))+1
     ymin <- round(min(pcaDF$PC2))-1
-    pcaobj <- ggplot(pcaDF,aes(PC1 ,PC2)) +
+    pcaobj <- ggplot(pcaDF,aes(text = paste("Gene:", groupnum), PC1 ,PC2)) +
       ggtitle("Genes Grouped by Common Motifs") +
       xlab(paste("PC1",round(pc1var * 100, 0), "%"))+
       ylab(paste("PC2",round(pc2var * 100, 0), "%")) +
       xlim(xmin, xmax) + 
       ylim(ymin,ymax) +
       geom_point(size = 3) +
-      geom_text(label= groupnum, size = 3, nudge_y = 1) +
+      #geom_text(label= groupnum, size = 3, nudge_y = 1) +
       theme_classic() 
     
     ggplotly(pcaobj)
@@ -660,6 +664,10 @@ server <- function(input, output) {
                            h4("Afterwards, we will cluster your genes based on their motifs and output them to
                               a PCA plot and two heatmaps, one that is interactive, and another that is static."),
                            
+                           tags$hr(),
+                           
+                           h4("Below is a text file of gene IDs you can use as input"),
+                           downloadButton("downloadEx", "Download Example File"),
                            
                            h3(strong("Steps")),
                            h4("1. Select the how your genes of interest are separated, comma, semicolon, tab or whitespace"),
@@ -670,10 +678,7 @@ server <- function(input, output) {
                            h4("5. Upload your file of gene IDs"),
                            h4("6. Go to the 'Input Genes' tab and click the button 'Run Analysis'.
                               Afterward you will be able to see different visualizations of your clusterings"),
-                           tags$hr(),
-                           
-                           h4("Below is a text file of gene IDs you can use as input"),
-                           downloadButton("downloadEx", "Download Example File")
+                         
                            
                            ),
                   tabPanel("Input Genes", 
@@ -688,7 +693,7 @@ server <- function(input, output) {
                                     tableOutput("changed"))
                            ),
                            h3("Once your genes have been converted click the Run Analysis button"),
-                           actionButton("runAnalysisButton","Run Analysis"),
+                           actionButton("runAnalysisButton","Run Analysis")
                            #uiOutput("condButton"),
                            
                            

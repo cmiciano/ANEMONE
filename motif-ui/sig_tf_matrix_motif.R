@@ -205,7 +205,7 @@ makenetgraph<-function(genes, dbinput, fdroutput) {
   overlapinfo <- paste("# of overlapped genes: ", sig$TFoverlap)
   #pvalinfo <- paste("P-Value: ", sig$TFpval) #Right now pvalue is the TFdf pvalue for gene overlap
   
-  pvalinfo <- paste("P-Value: ", sig$TFpadj) #Right now pvalue is the TFdf pvalue for gene overlap
+  pvalinfo <- paste("Adjusted P-Value: ", sig$TFpadj) #Right now pvalue is the TFdf pvalue for gene overlap
   sigcombmoderef <- paste(sig$symmodevec, sig$PMIDvec, overlapinfo, pvalinfo, sep = "<br>")
   sigallvert <- union(finsig$tfvec, finsig$targvec)
   sigallvertdata <-data.frame(sigallvert)

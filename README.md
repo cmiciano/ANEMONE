@@ -3,16 +3,53 @@ Differentially expressed genes are commonly clustered by gene expression to lear
 
 <br>
 <br>
-ANEMONE is hosted at anemone.salk.edu for online use. It was made using RShiny under the R computing environment (Chang et al., 2019). It is dependent on packages include gplots (Gregory et al., 2019), ggplot2 (Wickham, 2016), heatmaply (Galili et al, 2018), and visNetwork (Almende et al., 2019). Questions and comments can be directed to micianoc@gmail.com or mshokhirev@salk.edu
+ANEMONE is hosted at anemone.salk.edu for online use. It was made using RShiny under the R computing environment. It relies on the following packages:
+
+* shiny
+* ggplot2
+* gplots
+* heatmaply
+* shinyHeatmaply
+* bsplus
+* htmltools
+* shinythemes
+* GeneOverlap
+* visNetwork
+* igraph
+* RColorBrewer
+
+Questions and comments can be directed to micianoc@gmail.com or mshokhirev@salk.edu
 
 <br>
 <br>
 <br>
 
-Almende, B et al. (2019) visNetwork: Network Visualization using 'vis.js' Library. R package version 2.0.8. https://CRAN.R-project.org/package=visNetwork
 
-Chang, W. et al. (2019) shiny: Web Application Framework for R. R package version 1.4.0. https://CRAN.R-project.org/package=shiny
+# Running Anemone Locally
+ANEMONE can be one locally on your own Shiny Server. Instructions to install Shiny Server can be found here.
+https://shiny.rstudio.com/articles/shiny-server.html
+https://docs.rstudio.com/shiny-server/
 
-Galili, T. et al. (2018) heatmaply: an R package for creating interactive cluster heatmaps for online publishing. Bioinformatics, 34, 1600–1602. 
+* Create a folder (for example ANEMONEloc) in the location you will host ANEMONE and transfer the ANEMONE files to said folder
+* Your directory should look like /srv/shiny-server/ANEMONEloc and contain the files 
+  * data (a folder with necessary files for ANEMONE)
+  * app.R
+  * convertSymbols.R
+  * genHeatmap.R
+  * subsetGenes.R
+* Your local version of ANEMONE should be accessible at  http://[local_server_url]:3838/ANEMONEloc/ 
 
-Warnes, G. et al. (2019) gplots: Various R Programming Tools for Plotting Data. R package version 3.0.1.1. https://CRAN.R-project.org/package=gplots
+<br>
+<br>
+
+Alternatively, ANEMONE can be run through GitHub using R Studio.
+
+
+Once you have the above packages installed on your computer, run the following command in your R Studio console
+ ``` 
+ shiny::runGitHub('ANEMONE', 'cmiciano')
+ ``` 
+This will deploy a local version of ANEMONE in your web browser.
+
+
+

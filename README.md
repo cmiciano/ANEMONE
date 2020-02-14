@@ -2,7 +2,6 @@
 Differentially expressed genes are commonly clustered by gene expression to learn more about gene function. However, there is a lack of tools that have the ability to explore genes by their regulators We developed ANEMONE, an intuitive interactive web tool that comes in two parts. The first tool creates clusters of genes based on their cis-regulatory elements within promoters visualized with heatmaps or principal component analysis plots. The second tool provides an interactive regulatory network of genes based on known transcription factors that regulate them can be used to explore known interactions.
 
 <br>
-<br>
 ANEMONE is hosted at anemone.salk.edu for online use. It was made using RShiny under the R computing environment. It relies on the following packages:
 
 * shiny
@@ -20,8 +19,7 @@ ANEMONE is hosted at anemone.salk.edu for online use. It was made using RShiny u
 
 Questions and comments can be directed to micianoc@gmail.com or mshokhirev@salk.edu
 
-<br>
-<br>
+
 <br>
 
 

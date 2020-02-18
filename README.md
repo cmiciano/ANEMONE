@@ -24,18 +24,18 @@ Questions and comments can be directed to micianoc@gmail.com or mshokhirev@salk.
 
 
 # Running Anemone Locally
-ANEMONE can be one locally on your own Shiny Server. Instructions to install Shiny Server can be found here.
+ANEMONE can be run locally on your own Shiny Server. Instructions to install Shiny Server can be found here.
 https://shiny.rstudio.com/articles/shiny-server.html
 https://docs.rstudio.com/shiny-server/
 
-* Create a folder (for example ANEMONEloc) in the location you will host ANEMONE and transfer the ANEMONE files to said folder
-* Your directory should look like /srv/shiny-server/ANEMONEloc and contain the files 
+* Create a folder (for example ANEMONElocal) in the location you will host ANEMONE and transfer the ANEMONE files to said folder
+* Your directory should look like /srv/shiny-server/ANEMONElocal and contain the files 
   * data (a folder with necessary files for ANEMONE)
   * app.R
   * convertSymbols.R
   * genHeatmap.R
   * subsetGenes.R
-* Your local version of ANEMONE should be accessible at  http://[local_server_url]:3838/ANEMONEloc/ 
+* Your local version of ANEMONE should be accessible at  http://[local_server_url]:3838/ANEMONElocal/ 
 
 <br>
 <br>

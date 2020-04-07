@@ -9,6 +9,7 @@ generatePCA <- function(infile_name,genome) {
 
 targetmatnum <- infile_name
 transformed <-targetmatnum #motifs by genes 
+print(head(targetmatnum))
 print("transformed dim\n")
 print(dim(transformed))
 no_zeroes <- transformed[ , apply(transformed, 2, var, na.rm = TRUE) != 0]

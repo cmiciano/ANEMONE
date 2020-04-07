@@ -20,6 +20,8 @@ library(htmlwidgets) #Please upgrade the 'shiny' package to (at least) version 1
 library(plotly) 
 library(shinythemes) #could not find shiny theme
 library(RColorBrewer) #fine
+library(DT) #remind to update server later, server needs this package
+
 #library(shinyjs)
 # Define UI for data upload app ----
 ui <- fluidPage(
@@ -184,15 +186,15 @@ server <- function(input, output) {
     values$geneobj <- mapmat[[2]]
     
     
-    ##Generate PCA
+    # ##Generate PCA
     progressSig$set(message = "Generating PCA", value = 0.50)
     genesPCA <- values$convertedgenes
     matPCA<- values$matobj
     pcaList <- generatePCA(matPCA, input$genome)
-    
+     
     #pcaList <- generatePCA(genesPCA,input$genome)
     values$pca <- pcaList
-    
+     
 
     #Gen graph
     genGraph()
@@ -231,7 +233,7 @@ server <- function(input, output) {
      newout <- values$convertedgenes
      
      validate(
-       need(nrow(newout) > 4, "No genes found, make sure you inputted the correct gene ID type and that there are at least 5 genes")
+       need(nrow(newout) > 4, "No genes found, make sure you inputted the correct gene ID type, genome and ensure that there are at least 5 genes")
        #need(nrow(newout) > 5, "Your list has 5 or less genes, add more genes for higher accuracy")
      )
      
@@ -254,29 +256,61 @@ server <- function(input, output) {
     paste("You chose", input$genome)
   })
   
-  output$mattab <- renderTable({
-    if(is.null(input$file1))
-      return(NULL)
-   
-    mattable <- values$geneobj
+  # output$mattab <- renderTable({
+  #   if(is.null(input$file1))
+  #     return(NULL)
+  #  
+  #   mattable <- values$geneobj
+  #   
+  #   validate(
+  #     need(!is.null(mattable), "No genes inputted")
+  #   )
+  #   if(nrow(mattable) > 20 && ncol(mattable) > 8) {
+  #     mattable[1:20,1:8] ## if both truncate
+  #   } else if(nrow(mattable) > 20 && ncol(mattable) < 8) {
+  #     mattable[1:20,] #if 20 only greater than truncate
+  #   } else if(nrow(mattable) < 20 && ncol(mattable) > 8) {
+  #     mattable[,1:8] #if 20 only greater than truncate
+  #     
+  #   }
+  #   else{
+  #     head(mattable) #if small enough just display all
+  #     
+  #   }
+  # 
+  # })
+  
+  # output$mattab <- renderDT(iris,
+  #            filter = "top",
+  #            options = list(
+  #              pageLength = 5)
+  # )
+  
+  
+   output$mattab <- renderDT({
+     if(is.null(input$file1))
+       return(NULL)
     
-    validate(
-      need(!is.null(mattable), "No genes inputted")
-    )
-    if(nrow(mattable) > 20 && ncol(mattable) > 8) {
-      mattable[1:20,1:8] ## if both truncate
-    } else if(nrow(mattable) > 20 && ncol(mattable) < 8) {
-      mattable[1:20,] #if 20 only greater than truncate
-    } else if(nrow(mattable) < 20 && ncol(mattable) > 8) {
-      mattable[,1:8] #if 20 only greater than truncate
-      
-    }
-    else{
-      head(mattable) #if small enough just display all
-      
-    }
-
-  })
+     mattable <- values$geneobj
+     
+     validate(
+       need(!is.null(mattable), "No genes inputted")
+     )
+     if(nrow(mattable) > 20 && ncol(mattable) > 8) {
+       mattable[1:20,1:8] ## if both truncate
+     } else if(nrow(mattable) > 20 && ncol(mattable) < 8) {
+       mattable[1:20,] #if 20 only greater than truncate
+     } else if(nrow(mattable) < 20 && ncol(mattable) > 8) {
+       mattable[,1:8] #if 20 only greater than truncate
+       
+     }
+     else{
+       head(mattable) #if small enough just display all
+       
+     }
+   
+   }, options = list(pageLength = 10), rownames = F, filter = "top")
+  
   
   output$downloadTab <- downloadHandler(
     filename = function() {
@@ -422,7 +456,7 @@ server <- function(input, output) {
      #hmcol<-brewer.pal(11,"RdBu")
      
      #heatmaply(mtcars, cexRow = 1.5, cexCol = 1.5,
-     heatmaply(targetnum, cexRow = 0.5, cexCol = 1.0,
+     heatmaply(targetnum, cexRow = 0.5, cexCol = 0.5,
                colors = viridis(n = 256, alpha = 1, begin = 0, end = 1, option = "viridis"), 
                #colors = cm.colors(256),
                #colors = hmcol,
@@ -641,7 +675,7 @@ server <- function(input, output) {
     
   }) 
   
-  output$sigTFs <- renderTable({
+  output$sigTFs <- renderDT({
     if(is.null(input$file1))  
       return(NULL) 
     sigout <- values$sigTFobj
@@ -650,7 +684,7 @@ server <- function(input, output) {
     )
     sigout
     
-  })
+  }, options = list(pageLength = 10), rownames = F, filter = "top")
   
   output$motifclusttab <-  renderUI({
       tabsetPanel(id = "subTabPanel2",
@@ -709,7 +743,12 @@ server <- function(input, output) {
                            #   )
                            
                   ),
-                  tabPanel("Motif/Gene Table", uiOutput("mattab"), downloadButton("downloadTab", "Download")),
+                  #conditionalPanel("output.mattab", plotOutput('simulationChange')),
+                  #tabPanel("Motif/Gene Table", uiOutput("mattab"), downloadButton("downloadTab", "Download")),
+                  tabPanel("Motif/Gene Table", DTOutput("mattab"), downloadButton("downloadTab", "Download")),
+                  
+                  
+                  
                   tabPanel("PCA", plotlyOutput("plot"),
                            downloadButton("save", "Download")),
                   tabPanel("Heatmaps", uiOutput("heattab"))
@@ -719,7 +758,19 @@ server <- function(input, output) {
       
     })
     
-    
+  values$show <- TRUE
+  observe({
+    input$file1
+    values$show <- FALSE
+  })
+  
+  output$show <- reactive({
+    return(values$show)
+  })
+  
+  observeEvent(input$button, {
+    values$show <- TRUE
+  })
   
   output$nettab <- renderUI({
     tabsetPanel(id = "subTabPanel1",
@@ -772,7 +823,8 @@ server <- function(input, output) {
                          
                 ),
                 tabPanel("TF Table",
-                         tableOutput("sigTFs"),
+                         #tableOutput("sigTFs"),
+                         DTOutput("sigTFs"),
                          downloadButton("downloadsigTFs", "Download")
                          
                 ),

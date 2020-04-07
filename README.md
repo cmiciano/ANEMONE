@@ -22,7 +22,9 @@ Questions and comments can be directed to micianoc@gmail.com or mshokhirev@salk.
 
 # Running ANEMONE locally
 ANEMONE can be run locally on your own Shiny Server. Instructions to install Shiny Server can be found here.
+<br>
 https://shiny.rstudio.com/articles/shiny-server.html
+<br>
 https://docs.rstudio.com/shiny-server
 
 * Create a folder (for example ANEMONElocal) in the location you will host ANEMONE and transfer the ANEMONE files to said folder
@@ -36,11 +38,9 @@ https://docs.rstudio.com/shiny-server
 
 Alternatively, ANEMONE can be run through GitHub using R Studio.
 
-Once you have the above packages installed on your computer, run the following command in your R Studio console
-
+Once you have the above packages installed on your computer, run the following command in your R Studio console:
 ```
-shiny::runGithub('ANEMONE', 'cmiciano')
-
+shiny::runGitHub('ANEMONE', 'cmiciano')
 ```
 
-This will deploy a local version of ANEMONE in your web browser
+This will deploy a local version of ANEMONE in your web browser.

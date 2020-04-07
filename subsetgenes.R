@@ -4,60 +4,64 @@
 suppressMessages(library(gplots))
 
 args<-commandArgs(trailingOnly=T)
-infile_name=args[1]
-cat("Input file name: ",infile_name, "\n")
-inputgenes <-read.delim(infile_name, stringsAsFactors = F, header = F)
 
-#inputgenes <-read.delim("inputgenes.txt", stringsAsFactors = F, header = F)
-inputvec <- readLines("inputgenes.txt")
-#inputvec <- as.vector(inputgenes)
-allTFcounts <- read.delim("~/allTFcounts.txt", stringsAsFactors=FALSE)
+generatePCA <- function(infile_name,genome) {
 
+targetmatnum <- infile_name
+transformed <-targetmatnum #motifs by genes 
+print("transformed dim\n")
+print(dim(transformed))
+no_zeroes <- transformed[ , apply(transformed, 2, var, na.rm = TRUE) != 0]
 
-### Subset expression matrix for 
-repmotifs <- read.delim("~/163repmotifssummary.txt", stringsAsFactors=FALSE)
+pcagenes <- prcomp(no_zeroes, center = T , scale. = T)
 
 
+#compute standard deviation of each principal component
+std_dev <- pcagenes$sdev
 
-View(colnames(allTFcounts))
-colallTF <- colnames(allTFcounts)
-View(repmotifs$short_rep_motif)
-shortTF <- repmotifs$short_rep_motif
+#compute variance
+pr_var <- std_dev^2
 
-allTFsub <- subset(allTFcounts, colallTF %in% shortTF)
-allTFsub <- allTFcounts[,colallTF %in% shortTF]
-ID <- allTFcounts$ID
-allTFsub <- cbind(ID, allTFsub)
+#proportion of variance explained
+prop_varex <- pr_var/sum(pr_var)
+
+pc1var <- prop_varex[1]
+pc2var <- prop_varex[2]
+library(ggplot2)
+
+pcagenesDF <- data.frame(pcagenes[["x"]])
+pcagenesDF <- pcagenesDF[,c(1,2,3)]
+cat("PCA output \n")
+cat(head(pcagenesDF[1:10,1]),"\n")
+cat(dim(pcagenesDF))
+
+#View(rownames(pcagenesDF))
+
+groupnum <- rownames(pcagenesDF)
+## new plot with 150
+xmax <- round(max(pcagenesDF$PC1))+1
+xmin <- round(min(pcagenesDF$PC1))-1
+
+ymax <- round(max(pcagenesDF$PC2))+1
+ymin <- round(min(pcagenesDF$PC2))-1
+# ggplot(pcagenesDF,aes(PC1 ,PC2)) +
+#   ggtitle("Genes Grouped by Common Motifs") +
+#   xlab(paste("PC1",round(pc1var * 100, 0), "%"))+
+#   ylab(paste("PC2",round(pc2var * 100, 0), "%")) +
+#   xlim(xmin, xmax) + 
+#   ylim(ymin,ymax) +
+#   #geom_text(label= groupnum, size = 3, nudge_x = 1 ,nudge_y = 2) +
+#   #scale_fill_discrete(name = "Grouping") + 
+#   geom_point(size = 3) +
+#   #geom_step() +
+#   #scale_color_manual(values = c("#7FC97F","#F0027F","#386CB0"))
+#   theme_classic() 
+# dev.off()
+listobj <- list(pcagenesDF, pc1var, pc2var)
+return(listobj) ##Return PCA plot to plot in shiny app
+
+#return(pcagenesDF) ##Return PCA plot to plot in shiny app
+
+}
 
 
-### Subset allTFcounts.txt into the representative TFs
-
-#genelist <- c("A1CF", "AACS", "AADACL4", "AADAT")
-
-#Sample
-set.seed(1)
-#inputgenes <- sample(allTFcounts$ID, 1000, replace = F)
-#write.table(inputgenes, "inputgenes.txt", quote = F, row.names = F, col.names = F)
-cat("Subsetting table based on genes of interest...\n")
-targetgenes <- subset(allTFcounts, allTFcounts$ID %in% inputvec)
-
-motifnm <- colnames(targetgenes)
-genenm <- targetgenes$ID
-
-targetmatnmum <- targetgenes[,2:ncol(targetgenes)]
-rownames(targetmatnmum) <- genenm
-targetmatnmum <- log(targetmatnmum+5) #genes by sample
-
-## Generate a heatmap of the counts of each motif occurrence in 
-## the promoter region of each gene
-cat("Generating heatmap...\n")
-pdf("genemotifct.pdf", 8, 15)
-par(mar=c(10,2,2,3), cex=1.0)
-heatmap.2(as.matrix(targetmatnmum), Rowv = T, Colv = T, col = heat.colors, 
-          trace = "none", labRow = rownames(targetmatnmum),
-          lhei = c(0.5,5),          
-          cexRow=0.15,
-          cexCol=0.15,
-          hclustfun=function(x) hclust(x, method="ward.D2"))
-invisible(dev.off())
-cat("Heatmap finished!\n")

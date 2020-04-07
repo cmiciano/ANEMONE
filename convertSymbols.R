@@ -10,8 +10,8 @@
 
 convertGenes <- function(infile_name, genome_type, idtype) {
 inputgenesdata <- read.delim(infile_name, header = F, stringsAsFactors = F)
-#inputgenesdata <-read.delim("inputgenes.txt", stringsAsFactors = F, header = F)
-
+#inputgenesdata <-read.delim("motif-genes-app/inputgenes.txt", stringsAsFactors = F, header = F)
+#inputgenesdata <- read.delim("/Users/charlenemiciano/Documents/Salk/TFMatrix/ex_tfgenes.txt")
 ## Example file 
 #GeneID
 #inputgenesdata <- read.delim("~/Documents/Salk/TFMatrix/31geneidmm10.txt",
@@ -34,12 +34,16 @@ names(inputgenesdata) <- "gene_symbol"
 
 if (genome_type == "mm10") {
   cat("Using mm10 genome\n")
-  generef <- read.delim("mm10_GeneIDsymbol.tsv", 
+  #generef <- read.delim("motif-ui/data/mm10_GeneIDsymbol.tsv", 
+  #                     header=TRUE, stringsAsFactors = F) #for troubleshooting
+  generef <- read.delim("data/mm10_GeneIDsymbol.tsv", 
                         header=TRUE, stringsAsFactors = F)
   
 } else if(genome_type == "hg19") {
   cat("Using hg19 genome\n")
-  generef <- read.delim("hg19_GeneIDsymbol.tsv", 
+  #generef <- read.delim("motif-ui/data/hg19_GeneIDsymbol.tsv", 
+  #                      header=TRUE, stringsAsFactors = F)
+  generef <- read.delim("data/hg19_GeneIDsymbol.tsv", 
                         header=TRUE, stringsAsFactors = F)
 
 } else {
@@ -50,19 +54,19 @@ if (genome_type == "mm10") {
 
 
 if(idtype == "geneid") {
-  cat("Converting input gene ID to gene symbol...\n")
+  cat("Converting input gene ID...\n")
   sub <- subset(generef,  generef$GeneID %in% inputgenesdata$gene_symbol)
   
 }else if(idtype == "unigene") {
-  cat("Converting input Unigene IDs to gene symbol...\n")
+  cat("Converting input Unigene IDs...\n")
   sub <- subset(generef,  generef$Unigene %in% inputgenesdata$gene_symbol)
   
 }else if(idtype == "refseq") {
-  cat("Converting input RefSeq IDs to gene symbol...\n")
+  cat("Converting input RefSeq IDs...\n")
   sub <- subset(generef,  generef$RefSeq %in% inputgenesdata$gene_symbol)
 
   } else if(idtype == "ensembl") {
-  cat("Converting input Ensembl IDs to gene symbol...\n")
+  cat("Converting input Ensembl IDs...\n")
   sub <- subset(generef,  generef$Ensembl %in% inputgenesdata$gene_symbol)
 
   } else if (idtype == "name") {
@@ -71,14 +75,21 @@ if(idtype == "geneid") {
   }
 
 #Converts all forms to ENS
-outgenes <- as.character(sub$Ensembl)
+cat("Converting input genes to in Ensembl ID...\n")
+outgenes <- as.character(sub$name)
+outgenes <- outgenes[!outgenes == ""] #Remove blank genes
+outgenes <- outgenes[order(outgenes)] ## Reorder maybe here?
 outgenes <- data.frame(outgenes)
-names(outgenes) <- "ensembl"
-#write.table(inputgenesdata, "outputgenes.txt", row.names = F, col.names = F, quote = F)
-#cat(nrows(inputgenesdata))
+names(outgenes) <- "name"
+#write.table(outgenes, "outputgenes.txt", row.names = F, col.names = F, quote = F)
+#cat("num row", nrow(outgenes))
+#cat("null", is.null(outgenes))
 return(outgenes)
 
 }
 
-#outfile <- convertGenes("inputgenes.txt", "hg19", "name")
+
+
+####3
+#outfile <- convertGenes("../inputgenes.txt", "hg19", "name")
 

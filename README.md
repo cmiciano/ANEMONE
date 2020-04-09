@@ -15,6 +15,7 @@ ANEMONE is hosted at anemone.salk.edu for online use. It was made using RShiny u
 * visNetwork
 * igraph
 * RColorBrewer
+* DT
 
 <br>
 

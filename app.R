@@ -404,7 +404,7 @@ server <- function(input, output) {
         xlim(xmin, xmax) + 
         ylim(ymin,ymax) +
         geom_point(size = 3) +
-        geom_text(label= groupnum, size = 3, nudge_x = 1) +
+        #geom_text(label= groupnum, size = 3, nudge_x = 1) +
         theme_classic() 
       
       values$plt <- ggplotly(pcaobj)
@@ -456,12 +456,13 @@ server <- function(input, output) {
      #hmcol<-brewer.pal(11,"RdBu")
      
      #heatmaply(mtcars, cexRow = 1.5, cexCol = 1.5,
-     heatmaply(targetnum, cexRow = 0.5, cexCol = 0.5,
+     set.seed(1)
+     heatmaply(targetnum, cexRow = input$heatmaply_row, cexCol = 0.5,
                colors = viridis(n = 256, alpha = 1, begin = 0, end = 1, option = "viridis"), 
                #colors = cm.colors(256),
                #colors = hmcol,
                #colors=c("#009999", "#0000FF"), #blue and teal
-               hclustfun = function(x) hclust(x, method="ward.D"),
+               hclustfun = function(x) hclust(x, method=input$heat_method_heatmaply),
                Colv = rev(dendint),
                seriate = "mean",
                #fontsize_row = 20,
@@ -478,17 +479,18 @@ server <- function(input, output) {
      validate(
        need(!is.null(targetnum) , "No genes inputted into static heatmap")
      )
+     set.seed(1)
      statobj <- heatmap.2(as.matrix(targetnum), Rowv = T, Colv = T,
                           col = viridis(n = 256, alpha = 1, begin = 0, end = 1, option = "viridis"),
                 trace = "none", 
                 labRow = rownames(targetnum),
-                cexRow=0.5, #1.5
-                cexCol=0.3, # 1.5
+                cexRow= input$stat_row, #1.5
+                cexCol=input$stat_col, # 1.5
                 #sepwidth = c(0.01, 0.01),
                 #lhei = c(1,5),
                 #lwid = c(1,6),
                 #margins = c(13,20),
-                hclustfun=function(x) hclust(x, method="ward.D")
+                hclustfun=function(x) hclust(x, method=input$heat_method)
                )
      statobj
      statdend <- statobj[["colDendrogram"]]
@@ -502,12 +504,37 @@ server <- function(input, output) {
    
    output$heattab <- renderUI({
      tabsetPanel(id = "heattab", 
+                 
                  tabPanel("Static Heatmap",
-                          tabPanel("Static Heatmap", plotOutput("statmap", width = "800px", height = "700px")),
+                          selectInput("heat_method", "Select Clustering Method:",
+                                      #c("","mm10")),
+                                      c("ward.D", "ward.D2", "single", "complete", "average","mcquitty",
+                                        "median", "centroid")),
+                          sliderInput("stat_row", "Row Label Size:",
+                                      min = 0, max = 2,
+                                      value = 0.5, step = 0.01),
+                          sliderInput("stat_col", "Column Label Size:",
+                                      min = 0, max = 2,
+                                      value = 0.5, step = 0.01),
+                          
+                         
+                          tabPanel("Static Heatmap", plotOutput("statmap", width = "800px", height = "800px")),
                           downloadButton("downloadHeat", "Download") ##orig 600px
                  ),
                  tabPanel("Interactive Heatmap", 
-                          tabPanel("Heatmap", plotlyOutput("heatmap", width = "800px", height = "600px" )),
+                          selectInput("heat_method_heatmaply", "Select Clustering Method:",
+                                      #c("","mm10")),
+                                      c("ward.D", "ward.D2", "single", "complete", "average", "mcquitty", 
+                                        "median","centroid")),
+                          sliderInput("heatmaply_row", "Row Label Size:",
+                                      min = 0, max = 2,
+                                      value = 0.5, step = 0.01),
+                          sliderInput("heatmaply_col", "Column Label Size:",
+                                      min = 0, max = 2,
+                                      value = 0.5, step = 0.01),
+                       
+                          
+                          tabPanel("Heatmap", plotlyOutput("heatmap", width = "800px", height = "800px" )),
                           downloadButton("downloadHeatmaply", "Download")
                           
                  )
@@ -525,6 +552,7 @@ server <- function(input, output) {
     targetnum <- values$matobj
     data("mtcars")
     #heatmap.2(as.matrix(mtcars), Rowv = T, Colv = T, col = viridis(n = 256, alpha = 1, begin
+    set.seed(1)
     heatmap.2(as.matrix(targetnum), Rowv = T, Colv = T, col = viridis(n = 256, alpha = 1, begin
                                                                             = 0, end = 1, option = "viridis"), 
                 trace = "none", labRow = rownames(targetnum),
@@ -533,9 +561,9 @@ server <- function(input, output) {
               #lhei = c(0.5,5),     
               #lhei = c(0.5,1),     
               #lwid = c(0.5,0.5),
-              cexRow=0.5,#0.15
-              cexCol=0.3,#0.15
-              hclustfun=function(x) hclust(x, method="ward.D")
+              cexRow=input$stat_row,#0.15
+              cexCol=input$stat_col,#0.15
+              hclustfun=function(x) hclust(x, method=input$heat_method)
               )
      #invisible(dev.off())
     cat("Heatmap finished!\n")
@@ -550,12 +578,15 @@ server <- function(input, output) {
     
     data("mtcars")
     #heatmap.2(as.matrix(mtcars), Rowv = T, Colv = T, col = viridis(n = 256, alpha = 1, begin
-    heatmaply(indmap, cexRow = 0.5, cexCol = 1.0,
+    set.seed(1)
+    heatmaply(indmap, 
+              cexRow = input$heatmaply_row,
+              cexCol = input$heatmaply_col,
               #colors = viridis(n = 256, alpha = 1, begin = 0, end = 1, option = "viridis"), 
               #colors = cm.colors(256),
               #colors = hmcol,
               colors=c("#009999", "#0000FF"), #blue and teal
-              hclustfun = function(x) hclust(x, method="ward.D"),
+              hclustfun = function(x) hclust(x, method=input$heat_method_heatmaply),
               Colv = rev(dendint),
               seriate = "mean",
               #fontsize_row = 100,
@@ -575,7 +606,7 @@ server <- function(input, output) {
       #req(indHeat())
       #png(file, width=1200, height=1200,res=300, pointsize=8)
       pdf(file)
-      par(mar=c(10,2,2,3), cex=1.0)
+      par(mar=c(15,2,2,3), cex=0.5)
       cat("setup pdf")
       print(indHeat())
       cat("Finished in download")
@@ -584,18 +615,22 @@ server <- function(input, output) {
       })
   })
   
+  
+  ##### this seems to be the correct heatmaply that changes in download
   output$downloadHeatmaply <- ({
     downloadHandler(
       filename = function() { 'heatmaply.html' },
       content = function(outfile) {
         maplyout <- values$matobj
         dendint <- values$dendstat
-        tmp <- heatmaply(maplyout, cexRow = 0.5, cexCol = 0.3,
+        tmp <- heatmaply(maplyout, 
+                   cexRow = input$heatmaply_row, 
+                   cexCol = input$heatmaply_col,
                    colors = viridis(n = 256, alpha = 1, begin = 0, end = 1, option = "viridis"), 
                    #colors = cm.colors(256),
                    #colors = hmcol,
                    #colors=c("#009999", "#0000FF"), #blue and teal
-                   hclustfun = function(x) hclust(x, method="ward.D"),
+                   hclustfun = function(x) hclust(x, method=input$heat_method_heatmaply),
                    Colv = rev(dendint),
                    seriate = "mean",
                    row_dend_left = TRUE, 
@@ -711,7 +746,7 @@ server <- function(input, output) {
                            h4("4. Select the current gene ID type of your data"),
                            h4("5. Upload your file of gene IDs"),
                            h4("6. Go to the 'Input Genes' tab and click the button 'Run Analysis'.
-                              Afterward you will be able to see different visualizations of your clusterings"),
+                              Afterward you will be able to see different visualizations of your clusterings")
                          
                            
                            ),

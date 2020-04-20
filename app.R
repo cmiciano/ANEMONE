@@ -916,7 +916,9 @@ server <- function(input, output) {
       "ex_DE_genes.txt"
     },
     content = function(file) {
-      exfile <- read.delim("data/33geneuni.txt", stringsAsFactors=FALSE)
+      #exfile <- read.delim("data/33geneuni.txt", stringsAsFactors=FALSE)
+      exfile <- read.delim("data/dr_fc15.txt", stringsAsFactors=FALSE)
+      
       write.table(exfile, file, row.names = FALSE, quote = F, sep="\t")
       
     }

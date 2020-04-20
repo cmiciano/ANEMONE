@@ -17,7 +17,6 @@ library(heatmaply) #Loading required package: plotly #shiny function? Loading re
 library(bsplus) #causes to disconnect immediately
 library(htmltools)
 library(htmlwidgets) #Please upgrade the 'shiny' package to (at least) version 1.1
-library(plotly) 
 library(shinythemes) #could not find shiny theme
 library(RColorBrewer) #fine
 library(DT) #remind to update server later, server needs this package
@@ -41,14 +40,14 @@ ui <- fluidPage(
       #checkboxInput("header", "Header", TRUE),
       
       # Input: Select separator ----
-      radioButtons("sep", "Separator:",
-      #radioButtons("sep", "Specify what delimiter your genes are separated by:",
-                                
-                   choices = c(Comma = ",",
-                               Semicolon = ";",
-                               Tab = "\t",
-                               Whitespace = " "),
-                   selected = " "),
+      # radioButtons("sep", "Separator:",
+      # #radioButtons("sep", "Specify what delimiter your genes are separated by:",
+      #                           
+      #              choices = c(Comma = ",",
+      #                          Semicolon = ";",
+      #                          Tab = "\t",
+      #                          Whitespace = " "),
+      #              selected = " "),
       
       # Input: Select quotes ----
       radioButtons("quote", "Quote:",
@@ -206,7 +205,7 @@ server <- function(input, output) {
    output$contents <- renderTable({
      req(input$file1)
      df <- read.delim(input$file1$datapath,
-                      sep = input$sep,
+                      
                       quote = input$quote,
                       stringsAsFactors = F,
                       header = F)
@@ -865,7 +864,7 @@ server <- function(input, output) {
                 ),
                 #textOutput("geneout"),
                 sliderInput("decimal", "Significance Cutoff:",
-                            min = 0, max = 0.2,
+                            min = 0, max = 1,
                             value = 0.05, step = 0.01)
     )
     

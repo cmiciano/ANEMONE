@@ -72,7 +72,7 @@ ui <- fluidPage(
         ),
       
       selectInput("idtype", "Select Gene ID type:",
-                  c("geneid","unigene","refseq","ensembl","name"))
+                  c("geneid","unigene","refseq","ensembl","name"), selected = "name")
       %>%
         shinyInput_label_embed(
           shiny_iconlink() %>%

@@ -107,6 +107,7 @@ ui <- fluidPage(
                   #tabPanel("PCA", plotlyOutput("plot"),
                   #          downloadButton("save", "Download")),
                   #tabPanel("Heatmaps", uiOutput("heattab")),
+                  tabPanel("Home", uiOutput("starttab")),
                   tabPanel("Gene Clustering Tool", uiOutput("motifclusttab")),
                   
                   tabPanel("Network Graph Tool", uiOutput("nettab"))
@@ -720,48 +721,99 @@ server <- function(input, output) {
     
   }, options = list(pageLength = 10), rownames = F, filter = "top")
   
+  
+  
+  output$starttab <- renderUI({
+                tabsetPanel(id = "subTabPanel2",
+                            tabPanel("Get Started", 
+                                     h2(strong("Gene Clustering Tool")),
+                                     h4("The goal of this tool is take your differentially expressed genes of interest
+                                        and cluster these genes based on the motifs that are associated with each of them.
+                                        Our assumption is that genes that occur near similar motifs will be regulated by
+                                        similar transcription factors."),
+                                     h4("In the first tab, we will convert your gene IDs to gene symbols."),
+                                     h4("Afterwards, we will cluster your genes based on their motifs and output them to
+                                        a PCA plot and two heatmaps, one that is interactive, and another that is static."),
+                                     
+                                     tags$hr(),
+                                     
+                                     h4("Below is a text file of gene IDs you can use as input"),
+                                     downloadButton("downloadEx", "Download Example File"),
+                                     
+                                     h3(strong("Steps")),
+                                     h4("1. Select the how your genes of interest are separated, comma, semicolon, tab or whitespace"),
+                                     h4("2. Select whether or not your gene IDs have single quotes, double quotes or none at all"),
+                                     
+                                     h4("3. Select the genome your genes belong to"),
+                                     h4("4. Select the current gene ID type of your data"),
+                                     h4("5. Upload your file of gene IDs"),
+                                     h4("6. Go to the 'Input Genes' tab and click the button 'Run Analysis'.
+                                        Afterward you will be able to see different visualizations of your clusterings")
+                                     
+                                     
+                                     ), #end of tabpanel
+                            tabPanel("Input Genes", 
+                                     fluidRow(
+                                       column(1,
+                                              h4("Inputted"),
+                                              tableOutput("contents"),
+                                              downloadButton("downloadGenes", "Download Converted Genes"))
+                                       ,
+                                       column(2,offset = 1, 
+                                              h4("Converted"),
+                                              tableOutput("changed"))
+                                     ),
+                                     h3("Once your genes have been converted click the Run Analysis button"),
+                                     actionButton("runAnalysisButton","Run Analysis")
+                            )# end of tabpanel inputgenes
+                            
+                    
+                         ) #end of tabsetpanel
+    
+    })
+  
   output$motifclusttab <-  renderUI({
-      tabsetPanel(id = "subTabPanel2",
-                  tabPanel("Get Started", 
-                           h2(strong("Gene Clustering Tool")),
-                           h4("The goal of this tool is take your differentially expressed genes of interest
-                              and cluster these genes based on the motifs that are associated with each of them.
-                              Our assumption is that genes that occur near similar motifs will be regulated by
-                              similar transcription factors."),
-                           h4("In the first tab, we will convert your gene IDs to gene symbols."),
-                           h4("Afterwards, we will cluster your genes based on their motifs and output them to
-                              a PCA plot and two heatmaps, one that is interactive, and another that is static."),
-                           
-                           tags$hr(),
-                           
-                           h4("Below is a text file of gene IDs you can use as input"),
-                           downloadButton("downloadEx", "Download Example File"),
-                           
-                           h3(strong("Steps")),
-                           h4("1. Select the how your genes of interest are separated, comma, semicolon, tab or whitespace"),
-                           h4("2. Select whether or not your gene IDs have single quotes, double quotes or none at all"),
-                           
-                           h4("3. Select the genome your genes belong to"),
-                           h4("4. Select the current gene ID type of your data"),
-                           h4("5. Upload your file of gene IDs"),
-                           h4("6. Go to the 'Input Genes' tab and click the button 'Run Analysis'.
-                              Afterward you will be able to see different visualizations of your clusterings")
-                         
-                           
-                           ),
-                  tabPanel("Input Genes", 
-                           fluidRow(
-                             column(1,
-                                    h4("Inputted"),
-                                    tableOutput("contents"),
-                                    downloadButton("downloadGenes", "Download Converted Genes"))
-                             ,
-                             column(2,offset = 1, 
-                                    h4("Converted"),
-                                    tableOutput("changed"))
-                           ),
-                           h3("Once your genes have been converted click the Run Analysis button"),
-                           actionButton("runAnalysisButton","Run Analysis")
+       tabsetPanel(id = "subTabPanel2",
+      #             tabPanel("Get Started", 
+      #                      h2(strong("Gene Clustering Tool")),
+      #                      h4("The goal of this tool is take your differentially expressed genes of interest
+      #                         and cluster these genes based on the motifs that are associated with each of them.
+      #                         Our assumption is that genes that occur near similar motifs will be regulated by
+      #                         similar transcription factors."),
+      #                      h4("In the first tab, we will convert your gene IDs to gene symbols."),
+      #                      h4("Afterwards, we will cluster your genes based on their motifs and output them to
+      #                         a PCA plot and two heatmaps, one that is interactive, and another that is static."),
+      #                      
+      #                      tags$hr(),
+      #                      
+      #                      h4("Below is a text file of gene IDs you can use as input"),
+      #                      downloadButton("downloadEx", "Download Example File"),
+      #                      
+      #                      h3(strong("Steps")),
+      #                      h4("1. Select the how your genes of interest are separated, comma, semicolon, tab or whitespace"),
+      #                      h4("2. Select whether or not your gene IDs have single quotes, double quotes or none at all"),
+      #                      
+      #                      h4("3. Select the genome your genes belong to"),
+      #                      h4("4. Select the current gene ID type of your data"),
+      #                      h4("5. Upload your file of gene IDs"),
+      #                      h4("6. Go to the 'Input Genes' tab and click the button 'Run Analysis'.
+      #                         Afterward you will be able to see different visualizations of your clusterings")
+      #                    
+      #                      
+      #                      ),
+                  # tabPanel("Input Genes", 
+                  #          fluidRow(
+                  #            column(1,
+                  #                   h4("Inputted"),
+                  #                   tableOutput("contents"),
+                  #                   downloadButton("downloadGenes", "Download Converted Genes"))
+                  #            ,
+                  #            column(2,offset = 1, 
+                  #                   h4("Converted"),
+                  #                   tableOutput("changed"))
+                  #          ),
+                  #          h3("Once your genes have been converted click the Run Analysis button"),
+                  #          actionButton("runAnalysisButton","Run Analysis")
                            #uiOutput("condButton"),
                            
                            
@@ -776,7 +828,7 @@ server <- function(input, output) {
                            #     h3("Outputs calculated based on user inputs")
                            #   )
                            
-                  ),
+                  #),
                   #conditionalPanel("output.mattab", plotOutput('simulationChange')),
                   #tabPanel("Motif/Gene Table", uiOutput("mattab"), downloadButton("downloadTab", "Download")),
                   tabPanel("Motif/Gene Table", DTOutput("mattab"), downloadButton("downloadTab", "Download")),

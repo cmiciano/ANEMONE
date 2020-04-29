@@ -103,10 +103,7 @@ ui <- fluidPage(
       
       tabsetPanel(type = "tabs",
                  
-                  #tabPanel("Motif/Gene Table", uiOutput("mattab"), downloadButton("downloadTab", "Download")),
-                  #tabPanel("PCA", plotlyOutput("plot"),
-                  #          downloadButton("save", "Download")),
-                  #tabPanel("Heatmaps", uiOutput("heattab")),
+           
                   tabPanel("Home", uiOutput("starttab")),
                   tabPanel("Gene Clustering Tool", uiOutput("motifclusttab")),
                   
@@ -131,14 +128,7 @@ server <- function(input, output) {
     actionButton("runAnalysisButton", "Run analysis")
   })
   
-  # observe({
-  #    shinyjs::hide("runAnalysisButton")
-  #    newout <- values$convertedgenes
-  #  
-  #    if(!is.null(newout))
-  #      cat("Will show button")
-  #      shinyjs::show("runAnalysisButton")
-  # })
+
 
   output$fromCol <- renderUI({
     #df <-filedata()
@@ -147,14 +137,12 @@ server <- function(input, output) {
     newout <- values$convertedgenes
     
     actionButton("runAnalysisButton","Run Analysis")
-    #shinyjs::show("runAnalysisButton")
-    #items=names(df)
-    #names(items)=items
-    #selectInput("GroupA", "Group A:",items, multiple=TRUE)
+ 
     
   })
   
   promptNext <- observeEvent(input$file1, {
+    newfile <- showNotification("New file inputted!", duration = 5 , type = "message")
     id <- showNotification("Move to Input Genes tab to convert genes", duration = 5 , type = "message")
     tasks <- reactiveValues(data=NULL)
     
@@ -689,6 +677,9 @@ server <- function(input, output) {
   # 
   ##Regenerate graph
   observeEvent(input$decimal, {
+    if(is.null(values$convertedgenes))  {
+      return(NULL) 
+    }
     cat("in slider change")
     progressGen <- shiny::Progress$new()
     on.exit(progressGen$close())

@@ -156,6 +156,19 @@ server <- function(input, output) {
   
   promptNext <- observeEvent(input$file1, {
     id <- showNotification("Move to Input Genes tab to convert genes", duration = 5 , type = "message")
+    tasks <- reactiveValues(data=NULL)
+    
+    #Everytime a new file is uploaded reset values
+    values$convertedgenes <- NULL
+    values$matobj <- NULL
+    values$geneobj <- NULL
+    values$pca <- NULL
+    values$origsym <- NULL
+    values$plt <- NULL
+    values$dendstat <- NULL
+    values$netobj <- NULL
+    values$circobj <- NULL
+    values$sigTFobj <- NULL
     
   }
   )
@@ -693,7 +706,14 @@ server <- function(input, output) {
     netout <- values$netobj
     
     validate(
-      need(is.null(netout) == FALSE, "No DE genes based on significance cutoff, try changing parameters")
+      #if genes have not yet been converted prompt
+      need(is.null(values$convertedgenes) == FALSE, "Must convert genes before running tool"),
+      
+      #if genes have been converted play around with paramater
+      if(is.null(values$convertedgenes) == FALSE) {
+        need(is.null(netout) == FALSE, "No DE genes based on significance cutoff, try changing parameters")
+        
+      }
     )
     netout
     
@@ -703,8 +723,14 @@ server <- function(input, output) {
   output$circ  <- renderVisNetwork({
     circout <- values$circobj
     validate(
-      need(is.null(circout) == FALSE, "No DE genes based on significance cutoff, try changing parameters")
-    )
+      #if genes have not yet been converted prompt
+      need(is.null(values$convertedgenes) == FALSE, "Must convert genes before running tool"),
+      
+      #if genes have been converted play around with paramater
+      if(is.null(values$convertedgenes) == FALSE) {
+        need(is.null(circout) == FALSE, "No DE genes based on significance cutoff, try changing parameters")
+        
+      }    )
     circout
     
     
@@ -715,8 +741,14 @@ server <- function(input, output) {
       return(NULL) 
     sigout <- values$sigTFobj
     validate(
-      need(is.null(sigout) == FALSE, "No DE genes based on significance cutoff, try changing parameters")
-    )
+      #if genes have not yet been converted prompt
+      need(is.null(values$convertedgenes) == FALSE, "Must convert genes before running tool"),
+      
+      #if genes have been converted play around with paramater
+      if(is.null(values$convertedgenes) == FALSE) {
+        need(is.null(sigout) == FALSE, "No DE genes based on significance cutoff, try changing parameters")
+        
+      }    )
     sigout
     
   }, options = list(pageLength = 10), rownames = F, filter = "top")
@@ -844,19 +876,19 @@ server <- function(input, output) {
       
     })
     
-  values$show <- TRUE
-  observe({
-    input$file1
-    values$show <- FALSE
-  })
-  
-  output$show <- reactive({
-    return(values$show)
-  })
-  
-  observeEvent(input$button, {
-    values$show <- TRUE
-  })
+  # values$show <- TRUE
+  # observe({
+  #   input$file1
+  #   values$show <- FALSE
+  # })
+  # 
+  # output$show <- reactive({
+  #   return(values$show)
+  # })
+  # 
+  # observeEvent(input$button, {
+  #   values$show <- TRUE
+  # })
   
   output$nettab <- renderUI({
     tabsetPanel(id = "subTabPanel1",
